@@ -1,30 +1,31 @@
 data:
-root: "data/bdd100k"
+  root: "/work/nvme/bfdu/ktrikha/data/Dataset"
 images:
-train: "Data/100k_Images_Data/train"
-val: "Data/100k_Images_Data/val"
+  train: "/work/nvme/bfdu/ktrikha/data/Dataset/train"
+  val:   "/work/nvme/bfdu/ktrikha/data/Dataset/val"
+  test:  "/work/nvme/bfdu/ktrikha/data/Dataset/test"
 annotations:
-train: "data/bdd100k/labels/detection/train.json"
-val: "data/bdd100k/labels/detection/val.json"
+  train: "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_train_10k.json"
+  val:   "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
+  test:  "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_test_10k.json"
 
 
 model:
-swin_variant: "swin_tiny_patch4_window7_224"
-pretrained: true
-out_channels: 768 
-rpn_anchor_sizes: [[32, 64, 128, 256, 512]]
-
+  swin_variant: "swin_tiny_patch4_window7_224"
+  pretrained: true
+  out_channels: 768 
+  rpn_anchor_sizes: [[32, 64, 128, 256, 512]]
 
 training:
-num_epochs: 50
-batch_size: 4
-lr: 0.0001
-weight_decay: 0.0001
-num_workers: 4
-device: "cuda"
-save_dir: "experiments/logs/checkpoints"
-log_dir: "experiments/logs/tensorboard"
-checkpoint_freq: 1
+  num_epochs: 2
+  batch_size: 2
+  lr: 0.0001
+  weight_decay: 0.0001
+  num_workers: 4
+  device: "cuda"
+  save_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swin_frcnn"
+  log_dir:  "/work/nvme/bfdu/ktrikha/logs/swin_frcnn"
+  checkpoint_freq: 1
 
 
 seed: 42
