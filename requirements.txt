@@ -29,7 +29,7 @@ timm>=0.8.12
 pycocotools
 opencv-python
 albumentations
-yaml
+PyYAML
 tensorboard
 numpy
 pandas
