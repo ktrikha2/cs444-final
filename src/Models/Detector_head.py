@@ -37,7 +37,9 @@ def make_model(cfg):
     model = FasterRCNN(
         wrapped,
         num_classes=2,
-        rpn_anchor_generator=anchor_generator
+        rpn_anchor_generator=anchor_generator,
+        min_size=768,
+        max_size=1344
     )
 
     return model
