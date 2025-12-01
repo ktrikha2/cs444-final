@@ -39,7 +39,7 @@ def make_model(cfg):
         num_classes=2,
         rpn_anchor_generator=anchor_generator,
         min_size=768,
-        max_size=1344
+        max_size=768
     )
 
     return model
