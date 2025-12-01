@@ -28,5 +28,5 @@ class SwinBackbone(nn.Module):
     def forward(self, x):
         # features_only -> list of multi-scale feature maps, pick the last one
         feats = self.net(x)
-        print(feats)
+        print(feats[-1])
         return feats[-1]
