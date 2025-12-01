@@ -1,6 +1,6 @@
 import timm
 import torch.nn as nn
-
+from timm.layers import PatchEmbed
 
 class SwinBackbone(nn.Module):
     """Create a feature-extractor from timm's Swin model usable by torchvision's FasterRCNN.
@@ -15,10 +15,13 @@ class SwinBackbone(nn.Module):
         self.net = timm.create_model(
             variant, 
             pretrained=pretrained, 
-            features_only=True,
-            strict_img_size=False, 
-            img_size=768
+            features_only=True
+            #strict_img_size=False, 
+            #img_size=768
         )        # features_only returns a list of stage feature maps; choose the last stage
+        for m in self.net.modules():
+            if isinstance(m, PatchEmbed):
+                m.strict_img_size = False
         feat_channels = self.net.feature_info.channels()[-1]
         self.out_channels = feat_channels
 
