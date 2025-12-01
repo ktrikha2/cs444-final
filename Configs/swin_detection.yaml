@@ -1,13 +1,13 @@
 data:
   root: "/work/nvme/bfdu/ktrikha/data/Dataset"
-images:
-  train: "/work/nvme/bfdu/ktrikha/data/Dataset/train"
-  val:   "/work/nvme/bfdu/ktrikha/data/Dataset/val"
-  test:  "/work/nvme/bfdu/ktrikha/data/Dataset/test"
-annotations:
-  train: "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_train_10k.json"
-  val:   "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
-  test:  "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_test_10k.json"
+  images:
+    train: "/work/nvme/bfdu/ktrikha/data/Dataset/train"
+    val:   "/work/nvme/bfdu/ktrikha/data/Dataset/val"
+    test:  "/work/nvme/bfdu/ktrikha/data/Dataset/test"
+  annotations:
+    train: "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_train_10k.json"
+    val:   "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
+    test:  "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_test_10k.json"
 
 
 model:
@@ -17,13 +17,13 @@ model:
   rpn_anchor_sizes: [[32, 64, 128, 256, 512]]
 
 training:
-  num_epochs: 2
+  epochs: 2
   batch_size: 2
   lr: 0.0001
   weight_decay: 0.0001
   num_workers: 4
   device: "cuda"
-  save_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swin_frcnn"
+  checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swin_frcnn"
   log_dir:  "/work/nvme/bfdu/ktrikha/logs/swin_frcnn"
   checkpoint_freq: 1
 
