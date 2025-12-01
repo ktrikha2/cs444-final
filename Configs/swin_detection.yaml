@@ -1,0 +1,30 @@
+data:
+root: "data/bdd100k"
+images:
+train: "Data/100k_Images_Data/train"
+val: "Data/100k_Images_Data/val"
+annotations:
+train: "data/bdd100k/labels/detection/train.json"
+val: "data/bdd100k/labels/detection/val.json"
+
+
+model:
+swin_variant: "swin_tiny_patch4_window7_224"
+pretrained: true
+out_channels: 768 
+rpn_anchor_sizes: [[32, 64, 128, 256, 512]]
+
+
+training:
+num_epochs: 50
+batch_size: 4
+lr: 0.0001
+weight_decay: 0.0001
+num_workers: 4
+device: "cuda"
+save_dir: "experiments/logs/checkpoints"
+log_dir: "experiments/logs/tensorboard"
+checkpoint_freq: 1
+
+
+seed: 42

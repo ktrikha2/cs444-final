@@ -1,7 +1,6 @@
 # Core frameworks
-torch==2.2.0
-torchvision==0.17.0
-torchaudio==2.2.0
+torch>=1.13
+torchvision>=0.14
 timm==0.9.12
 transformers==4.39.0
 
@@ -25,3 +24,13 @@ tensorboard==2.15.0
 pandas==2.2.2
 numpy==1.26.4
 seaborn==0.13.2
+
+timm>=0.8.12
+pycocotools
+opencv-python
+albumentations
+yaml
+tensorboard
+numpy
+pandas
+Pillow
