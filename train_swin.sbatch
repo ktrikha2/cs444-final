@@ -1,13 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=swin-debug
-#SBATCH --account=bfdu
-#SBATCH --partition=gpu
-#SBATCH --nodes=1
-#SBATCH --cpus-per-task=8
-#SBATCH --gres=gpu:1
-#SBATCH --mem=48G
+#SBATCH --job-name=swin_debug
+#SBATCH --account=bfdu-dtai-gh
+#SBATCH --partition=ghx4
 #SBATCH --time=03:00:00
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=32
+#SBATCH --gpus=1
+#SBATCH --mem=48g
+
 
 #SBATCH --mail-user=ktrikha2@illinois.edu  # replace with your email
 #SBATCH --mail-type=NONE
