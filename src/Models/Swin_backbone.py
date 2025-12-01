@@ -16,7 +16,7 @@ class SwinBackbone(nn.Module):
             variant, 
             pretrained=pretrained, 
             features_only=True,
-            img_size=1344,
+            img_size=1440,
             strict_img_size=False 
         )        # features_only returns a list of stage feature maps; choose the last stage
         feat_channels = self.net.feature_info.channels()[-1]
