@@ -15,13 +15,20 @@ def random_horizontal_flip(image, target, p=0.5):
             target['boxes'] = boxes
     return image, target
 
+def xywh_to_xyxy(boxes):
+    # boxes: [N, 4] = [x, y, w, h]
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    x2 = boxes[:, 0] + boxes[:, 2]
+    y2 = boxes[:, 1] + boxes[:, 3]
+    return torch.stack([x1, y1, x2, y2], dim=1)
 
 def filter_invalid_boxes(target):
     boxes = target["boxes"]
 
     # Keep only boxes with positive width & height
-    keep = (boxes[:, 2] > 1) & (boxes[:, 3] > 1)
-
+    keep = (boxes[:, 2] > boxes[:, 0] + 1) & \
+           (boxes[:, 3] > boxes[:, 1] + 1)
     target["boxes"]  = boxes[keep]
     target["labels"] = target["labels"][keep]
 
@@ -31,6 +38,7 @@ def filter_invalid_boxes(target):
 def compose_transforms():
     def transform(image, target):
         image, target = random_horizontal_flip(image, target, p=0.5)
+        target["boxes"] = xywh_to_xyxy(target["boxes"])
         target = filter_invalid_boxes(target)
         return image, target
     return transform
