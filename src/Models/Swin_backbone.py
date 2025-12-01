@@ -48,3 +48,4 @@ class SwinBackbone(nn.Module):
             print(f"After permute shape: {feat.shape}")
         else:
             print(f"No permute needed, shape already correct")
+        return feat
