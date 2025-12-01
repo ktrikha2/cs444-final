@@ -12,8 +12,13 @@ class SwinBackbone(nn.Module):
     def __init__(self, variant='swin_tiny_patch4_window7_224', pretrained=True):
         super().__init__()
         # create a swin model with global pooling disabled so we can get the spatial map
-        self.net = timm.create_model(variant, pretrained=pretrained, features_only=True)
-        # features_only returns a list of stage feature maps; choose the last stage
+        self.net = timm.create_model(
+            variant, 
+            pretrained=pretrained, 
+            features_only=True,
+            img_size=768,
+            strict_img_size=False 
+        )        # features_only returns a list of stage feature maps; choose the last stage
         feat_channels = self.net.feature_info.channels()[-1]
         self.out_channels = feat_channels
 
