@@ -73,7 +73,7 @@ def main():
         collate_fn=collate_fn,
         pin_memory=True,
         persistent_workers=True,
-        prefatch_factor=4
+        prefetch_factor=4
     )
 
     # ----------------------------------------------------
