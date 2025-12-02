@@ -1,8 +1,16 @@
+
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(ROOT)
+
 import argparse
 import yaml
 import torch
 import json
 from torch.utils.data import DataLoader
+
 
 from src.Dataset.Dataset import BDDDetectionDataset
 from src.Models.Detector_head import make_model
