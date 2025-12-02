@@ -34,8 +34,8 @@ class SwinBackbone(nn.Module):
         #print(f"\n=== Swin Backbone Debug ===")
         #print(f"Input x shape: {x.shape}")
         #print(f"Number of feature maps returned: {len(feats)}")
-        for i, f in enumerate(feats):
-            print(f"  Feature map {i} shape: {f.shape}")
+        #for i, f in enumerate(feats):
+            #print(f"  Feature map {i} shape: {f.shape}")
         #print(f"Selected feature (feats[-1]) shape: {feat.shape}")
         #print(f"Feature dtype: {feat.dtype}")
         
