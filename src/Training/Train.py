@@ -70,7 +70,10 @@ def main():
         batch_size=cfg['training']['batch_size'],
         shuffle=True,
         num_workers=cfg['training']['num_workers'],
-        collate_fn=collate_fn
+        collate_fn=collate_fn,
+        pin_memory=True,
+        persistent_workers=True,
+        prefatch_factor=4
     )
 
     # ----------------------------------------------------
@@ -108,16 +111,16 @@ def main():
     for epoch in range(num_epochs):
         loss = train_loop(model, train_loader, optimizer, device)
         print(f"Epoch {epoch+1}/{num_epochs} | Loss: {loss:.4f}")
-
-        save_path = os.path.join(cfg['training']['checkpoint_dir'], f"model_epoch{epoch+1}.pth")
-        save_checkpoint(
-        {
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-        },
-        save_path,
-        )
+        if (epoch + 1) % cfg['training']['checkpoint_freq'] == 0:
+            save_path = os.path.join(cfg['training']['checkpoint_dir'], f"model_epoch{epoch+1}.pth")
+            save_checkpoint(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+            },
+            save_path,
+            )
 
 
 if __name__ == "__main__":
