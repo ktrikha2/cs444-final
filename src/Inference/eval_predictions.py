@@ -51,6 +51,16 @@ def main():
     )
 
     model = make_model(cfg)
+    num_classes = 10 + 1
+    in_features_cls = model.roi_heads.box_predictor.cls_score.in_features
+    in_features_bbox = model.roi_heads.box_predictor.bbox_pred.in_features
+    model.roi_heads.box_predictor.cls_score = torch.nn.Linear(
+        in_features_cls, num_classes
+    )
+    model.roi_heads.box_predictor.bbox_pred = torch.nn.Linear(
+        in_features_bbox, num_classes * 4
+    )
+
     ckpt = torch.load(args.ckpt, map_location="cpu")
     model.load_state_dict(ckpt["model_state_dict"])
     model.to(device).eval()
