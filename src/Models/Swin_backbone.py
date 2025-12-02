@@ -31,21 +31,21 @@ class SwinBackbone(nn.Module):
         feat = feats[-1]
         
         # DEBUG: Print feature information
-        print(f"\n=== Swin Backbone Debug ===")
-        print(f"Input x shape: {x.shape}")
-        print(f"Number of feature maps returned: {len(feats)}")
+        #print(f"\n=== Swin Backbone Debug ===")
+        #print(f"Input x shape: {x.shape}")
+        #print(f"Number of feature maps returned: {len(feats)}")
         for i, f in enumerate(feats):
             print(f"  Feature map {i} shape: {f.shape}")
-        print(f"Selected feature (feats[-1]) shape: {feat.shape}")
-        print(f"Feature dtype: {feat.dtype}")
+        #print(f"Selected feature (feats[-1]) shape: {feat.shape}")
+        #print(f"Feature dtype: {feat.dtype}")
         
         # CRITICAL: timm's Swin returns features in [B, H, W, C] format
         # but torchvision FasterRCNN expects [B, C, H, W]
         # Check if we need to permute
         if feat.dim() == 4 and feat.shape[1] < feat.shape[3]:
-            print(f"Permuting from [B, H, W, C] to [B, C, H, W]")
+            #print(f"Permuting from [B, H, W, C] to [B, C, H, W]")
             feat = feat.permute(0, 3, 1, 2).contiguous()
-            print(f"After permute shape: {feat.shape}")
-        else:
-            print(f"No permute needed, shape already correct")
+            #print(f"After permute shape: {feat.shape}")
+        #else:
+            #print(f"No permute needed, shape already correct")
         return feat
