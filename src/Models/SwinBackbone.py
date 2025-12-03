@@ -3,6 +3,7 @@ import torch
 from torch import nn
 import timm
 from timm.layers import PatchEmbed
+import torch.nn.functional as F
 
 
 class SwinBackbone(nn.Module):
@@ -32,6 +33,15 @@ class SwinBackbone(nn.Module):
         images: [B, 3, H, W]
         returns: feature map [B, C_out, H_s, W_s]
         """
+
+        #NEED TO ADD PADDING TO WORK WITH SWIN PRETRAINED
+        B, C, H, W = images.shape
+        pad_h = (224 - H % 224) % 224
+        pad_w = (224 - W % 224) % 224
+
+        if pad_h > 0 or pad_w > 0:
+            images = F.pad(images, (0, pad_w, 0, pad_h))
+
         features = self.swin(images)   # list with 1 element because out_indices=(3,)
         feat = features[0]
         return feat
