@@ -14,29 +14,36 @@ class PositionalEncoding2D(nn.Module):
             raise ValueError("hidden_dim must be even for 2D positional encoding")
         self.hidden_dim = hidden_dim
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: [B, C, H, W]
+    def forward(self, x):
         B, C, H, W = x.shape
         device = x.device
 
-        half_dim = self.hidden_dim // 2
+        # We split hidden_dim as: half for Y, half for X
+        dim_half = self.hidden_dim // 2
 
-        dim_t = torch.arange(half_dim, dtype=torch.float32, device=device)
-        dim_t = 10000 ** (2 * (dim_t // 2) / half_dim)
+        dim_t = torch.arange(dim_half, dtype=torch.float32, device=device)
+        dim_t = 10000 ** (2 * (dim_t // 2) / dim_half)
 
         y_embed = torch.arange(H, dtype=torch.float32, device=device).unsqueeze(1)
         x_embed = torch.arange(W, dtype=torch.float32, device=device).unsqueeze(1)
 
-        pos_y = y_embed / dim_t
-        pos_x = x_embed / dim_t
+        pos_y = y_embed / dim_t          # [H, dim_half]
+        pos_x = x_embed / dim_t          # [W, dim_half]
 
-        pos_y = torch.stack((pos_y.sin(), pos_y.cos()), dim=2).flatten(1)  # [H, half_dim]
-        pos_x = torch.stack((pos_x.sin(), pos_x.cos()), dim=2).flatten(1)  # [W, half_dim]
+        pos_y = torch.stack((pos_y.sin(), pos_y.cos()), dim=2).flatten(1)
+        pos_x = torch.stack((pos_x.sin(), pos_x.cos()), dim=2).flatten(1)
 
-        pos = torch.cat((
-            pos_y[:, None, :].repeat(1, W, 1),
-            pos_x[None, :, :].repeat(H, 1, 1),
-        ), dim=2)  # [H, W, C]
+        # Now each is exactly dim_half
+        pos_y = pos_y[:, :dim_half]
+        pos_x = pos_x[:, :dim_half]
+
+        pos = torch.cat(
+            (
+                pos_y[:, None, :].repeat(1, W, 1),   # [H, W, dim_half]
+                pos_x[None, :, :].repeat(H, 1, 1),   # [H, W, dim_half]
+            ),
+            dim=2,
+        )  # [H, W, hidden_dim]
 
         pos = pos.permute(2, 0, 1).unsqueeze(0).repeat(B, 1, 1, 1)
         return pos
@@ -140,6 +147,9 @@ class SwinDetrHead(nn.Module):
 
         #pos encoding
         pos = self.pos_enc(feat)            # [B, hidden_dim, H, W]
+        if feat.shape[1] != pos.shape[1]:
+            print("FEAT:", feat.shape, "POS:", pos.shape, flush=True)
+
         feat = feat + pos
 
         #  Flatten spatial dims for Transformer to  [S, B, C]
