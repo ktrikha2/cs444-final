@@ -16,29 +16,29 @@ class PositionalEncoding2D(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [B, C, H, W]
-        b, c, h, w = x.shape
+        B, C, H, W = x.shape
         device = x.device
 
-        dim_t = torch.arange(self.hidden_dim // 2, dtype=torch.float32, device=device)
-        dim_t = 10000 ** (2 * (dim_t // 2) / self.hidden_dim)
+        half_dim = self.hidden_dim // 2
 
-        pos_y = torch.arange(h, dtype=torch.float32, device=device).unsqueeze(1)
-        pos_x = torch.arange(w, dtype=torch.float32, device=device).unsqueeze(1)
+        dim_t = torch.arange(half_dim, dtype=torch.float32, device=device)
+        dim_t = 10000 ** (2 * (dim_t // 2) / half_dim)
 
-        pos_y = pos_y / dim_t.unsqueeze(0)  # [H, D/2]
-        pos_x = pos_x / dim_t.unsqueeze(0)  # [W, D/2]
+        y_embed = torch.arange(H, dtype=torch.float32, device=device).unsqueeze(1)
+        x_embed = torch.arange(W, dtype=torch.float32, device=device).unsqueeze(1)
 
-        pos_y = torch.stack([torch.sin(pos_y), torch.cos(pos_y)], dim=2).flatten(1)
-        pos_x = torch.stack([torch.sin(pos_x), torch.cos(pos_x)], dim=2).flatten(1)
+        pos_y = y_embed / dim_t
+        pos_x = x_embed / dim_t
 
-        # build full grid
-        pos = torch.zeros((h, w, self.hidden_dim), device=device)
-        for i in range(h):
-            for j in range(w):
-                pos[i, j, : self.hidden_dim // 2] = pos_y[i]
-                pos[i, j, self.hidden_dim // 2 :] = pos_x[j]
+        pos_y = torch.stack((pos_y.sin(), pos_y.cos()), dim=2).flatten(1)  # [H, half_dim]
+        pos_x = torch.stack((pos_x.sin(), pos_x.cos()), dim=2).flatten(1)  # [W, half_dim]
 
-        pos = pos.permute(2, 0, 1).unsqueeze(0).repeat(b, 1, 1, 1)  # [B, C, H, W]
+        pos = torch.cat((
+            pos_y[:, None, :].repeat(1, W, 1),
+            pos_x[None, :, :].repeat(H, 1, 1),
+        ), dim=2)  # [H, W, C]
+
+        pos = pos.permute(2, 0, 1).unsqueeze(0).repeat(B, 1, 1, 1)
         return pos
 
 
