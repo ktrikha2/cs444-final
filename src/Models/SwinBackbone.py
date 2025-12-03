@@ -21,7 +21,7 @@ class SwinBackbone(nn.Module):
             features_only=True,
             out_indices=(3,),  # last stage only
         )
-        for m in self.net.modules():
+        for m in self.swin.modules():
             if isinstance(m, PatchEmbed):
                 m.strict_img_size = False
         # Number of channels in the last stage (C_out)
