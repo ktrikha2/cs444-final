@@ -44,6 +44,9 @@ class SwinBackbone(nn.Module):
 
         features = self.swin(images)   # list with 1 element because out_indices=(3,)
         feat = features[0]
+
+        feat = feat.permute(0, 3, 1, 2).contiguous() #changing from BCHW to BHWC in the tensor
+
         return feat
 
 
