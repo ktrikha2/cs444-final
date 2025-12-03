@@ -33,5 +33,5 @@ nvidia-smi || true
 
 
 cd /work/nvme/bfdu/ktrikha/code/cs444-final
-python src/Training/Train.py \
-  --config Configs/swin_detection.yaml
+python src/Training/train_swindetr.py \
+  --config Configs/detr.yaml

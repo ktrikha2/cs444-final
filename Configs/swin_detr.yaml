@@ -1,0 +1,38 @@
+data:
+  root: "/work/nvme/bfdu/ktrikha/data/Dataset"
+  images:
+    train: "/work/nvme/bfdu/ktrikha/data/Dataset/train"
+    val:   "/work/nvme/bfdu/ktrikha/data/Dataset/val"
+    test:  "/work/nvme/bfdu/ktrikha/data/Dataset/test"
+  annotations:
+    train: "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_train_10k.json"
+    val:   "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
+    test:  "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_test_10k.json"
+
+
+model:
+  swin_variant: "swin_tiny_patch4_window7_224"
+  pretrained: true
+  hidden_dim: 256
+  num_classes: 10
+  num_queries: 100
+  nheads: 8
+  enc_layers: 6
+  dec_layers: 6
+  dim_feedforward: 2048
+  dropout: 0.1
+
+
+training:
+  epochs: 2                  # DEBUG RUN
+  batch_size: 2
+  lr: 0.0001
+  weight_decay: 0.0001
+  num_workers: 16             # Reduce for first test
+  device: "cuda"
+  checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_run1"
+  log_dir:  "/work/nvme/bfdu/ktrikha/logs/swindetr_run1"
+  checkpoint_freq: 1      
+
+
+seed: 42
