@@ -2,6 +2,7 @@
 import torch
 from torch import nn
 import timm
+from timm.layers import PatchEmbed
 
 
 class SwinBackbone(nn.Module):
@@ -20,7 +21,9 @@ class SwinBackbone(nn.Module):
             features_only=True,
             out_indices=(3,),  # last stage only
         )
-
+        for m in self.net.modules():
+            if isinstance(m, PatchEmbed):
+                m.strict_img_size = False
         # Number of channels in the last stage (C_out)
         self.out_channels = self.swin.feature_info.channels()[-1]
 
