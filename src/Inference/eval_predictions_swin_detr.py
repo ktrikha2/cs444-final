@@ -68,7 +68,7 @@ def main():
     # -------------------------
     # Inference loop
     # -------------------------
-    printed_bug = False
+    printed_debug = False
     with torch.no_grad():
         for images, targets in loader:
             # images: tuple([3,H,W]); targets: tuple(dict)
