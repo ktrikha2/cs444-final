@@ -4,6 +4,7 @@ import argparse
 import yaml
 import torch
 from torch.utils.data import DataLoader
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT)
@@ -32,8 +33,22 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict):
     criterion.train()
     running_loss = 0.0
 
+
+
+    #TIMING TO SEE BOTTLENECK
+    epoch_t0 = time.time()
+
+    data_time = 0.0
+    forward_time = 0.0
+    loss_time = 0.0
+    backward_time = 0.0
+    optim_time = 0.0
+
     for images, targets in data_loader:
         # images: tuple of tensors [3,H,W]; targets: tuple of dicts
+        t_data_start = time.time()
+
+
         images = [img.to(device) for img in images]
         batch_tensor = torch.stack(images, dim=0)  # [B,3,H,W]
 
@@ -43,20 +58,38 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict):
             tgt = {k: v.to(device) for k, v in t.items()}
             tgt["img_size"] = torch.tensor([h, w], dtype=torch.float32, device=device)
             processed_targets.append(tgt)
+        data_time += time.time() - t_data_start #data loading time
 
+        t_fwd = time.time()
         outputs = model(batch_tensor)
-
+        forward_time += time.time() - t_fwd
+       
+        t_loss = time.time()
         loss_dict = criterion(outputs, processed_targets)
-
         # weighted sum of all losses
         loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict.keys())
-
+        loss_time += time.time() - t_loss
+        
+        t_bwd = time.time()
         optimizer.zero_grad()
         loss.backward()
+        backward_time += time.time() - t_bwd
+        
+        t_opt = time.time()
         optimizer.step()
-
+        optim_time += time.time() - t_opt
         running_loss += loss.item()
-
+    epoch_total = time.time() - epoch_t0
+    print(
+        f"Epoch Timing | "
+        f"total={epoch_total:.1f}s | "
+        f"data={data_time:.1f}s | "
+        f"fwd={forward_time:.1f}s | "
+        f"loss={loss_time:.1f}s | "
+        f"bwd={backward_time:.1f}s | "
+        f"opt={optim_time:.1f}s",
+        flush=True
+    )
     return running_loss / len(data_loader)
 
 
