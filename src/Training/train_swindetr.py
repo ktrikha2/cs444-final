@@ -65,7 +65,7 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict):
             bw = bw / w
             bh = bh / h
             tgt["boxes"] = torch.stack([cx, cy, bw, bh], dim=1).clamp(0, 1)
-            if tgt["boxes"].max() > 1.01:
+            if tgt["boxes"].numel() > 0 and tgt["boxes"].max() > 1.01:
                 print("BAD - GT boxes NOT normalized:", tgt["boxes"].max().item())
             processed_targets.append(tgt)
         data_time += time.time() - t_data_start #data loading time
