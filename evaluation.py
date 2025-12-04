@@ -334,10 +334,10 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
 
 if __name__ == "__main__":
     # Configure paths
-    PRED_FILE = "val_predictions_swin_detr_epoch25.json"  # Change to your prediction file
+    PRED_FILE = "val_predictions_swin_detr_epoch52.json"  # Change to your prediction file
     GT_FILE = "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
     IMG_DIR = "/work/nvme/bfdu/ktrikha/data/Dataset/val"
-    OUTPUT_DIR = "evaluation_results_debug2"
+    OUTPUT_DIR = "evaluation_results_debug3"
     
     # IMPORTANT: Limit to just 200 images (your validation subset)
     MAX_IMAGES = None
