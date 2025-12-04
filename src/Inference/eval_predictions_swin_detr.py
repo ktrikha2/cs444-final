@@ -68,6 +68,7 @@ def main():
     # -------------------------
     # Inference loop
     # -------------------------
+    printed_bug = False
     with torch.no_grad():
         for images, targets in loader:
             # images: tuple([3,H,W]); targets: tuple(dict)
@@ -88,6 +89,15 @@ def main():
                 probs = pred_logits[b].softmax(-1)        # [Q, C+1]
                 scores, labels = probs.max(-1)            # [Q], [Q]
 
+                if not printed_debug:
+                    print("\n===== RAW MODEL DEBUG =====")
+                    print("First 10 normalized pred_boxes:")
+                    print(pred_boxes[b][:10].cpu())
+                    print("First 10 scores:")
+                    print(scores[:10].cpu())
+                    print("First 10 labels:")
+                    print(labels[:10].cpu())
+                printed_debug = True
                 # ignore "no-object" class, which is index = num_classes
                 keep = labels != num_classes
                 scores = scores[keep]
