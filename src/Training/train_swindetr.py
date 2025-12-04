@@ -57,6 +57,16 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict):
             h, w = img.shape[-2:]
             tgt = {k: v.to(device) for k, v in t.items()}
             tgt["img_size"] = torch.tensor([h, w], dtype=torch.float32, device=device)
+            boxes = tgt["boxes"]  # [N,4] in pixel XYWH
+            #normalized to match loss expectations
+            x, y, bw, bh = boxes.unbind(dim=1)
+            cx = (x + 0.5 * bw) / w
+            cy = (y + 0.5 * bh) / h
+            bw = bw / w
+            bh = bh / h
+            tgt["boxes"] = torch.stack([cx, cy, bw, bh], dim=1).clamp(0, 1)
+            if tgt["boxes"].max() > 1.01:
+                print("BAD - GT boxes NOT normalized:", tgt["boxes"].max().item())
             processed_targets.append(tgt)
         data_time += time.time() - t_data_start #data loading time
 
