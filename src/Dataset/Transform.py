@@ -27,8 +27,8 @@ def filter_invalid_boxes(target):
     boxes = target["boxes"]
 
     # Keep only boxes with positive width & height
-    keep = (boxes[:, 2] > boxes[:, 0] + 1) & \
-           (boxes[:, 3] > boxes[:, 1] + 1)
+    keep = (boxes[:, 2] > 1) & (boxes[:, 3] > 1)
+    
     target["boxes"]  = boxes[keep]
     target["labels"] = target["labels"][keep]
 
@@ -38,7 +38,7 @@ def filter_invalid_boxes(target):
 def compose_transforms():
     def transform(image, target):
         image, target = random_horizontal_flip(image, target, p=0.5)
-        target["boxes"] = xywh_to_xyxy(target["boxes"])
+        #target["boxes"] = xywh_to_xyxy(target["boxes"])
         target = filter_invalid_boxes(target)
         return image, target
     return transform
