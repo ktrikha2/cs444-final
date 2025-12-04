@@ -32,7 +32,7 @@ training:
   device: "cuda"
   checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_run2"
   log_dir:  "/work/nvme/bfdu/ktrikha/logs/swindetr_run2"
-  checkpoint_freq: 5      
+  checkpoint_freq: 3      
 
 
 seed: 42
