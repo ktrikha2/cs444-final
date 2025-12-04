@@ -160,10 +160,10 @@ class SwinDetrHead(nn.Module):
 
         # Object queries as decoder targets
         query_embed = self.query_embed.weight.unsqueeze(1).repeat(1, b, 1)  # [num_queries, B, C]
-        tgt = torch.zeros_like(query_embed)
+        #tgt = torch.zeros_like(query_embed)
 
         # Decoder
-        hs = self.decoder(tgt=tgt, memory=memory)  # [num_queries, B, C]
+        hs = self.decoder(tgt=query_embed, memory=memory)  # [num_queries, B, C]
         hs = hs.permute(1, 0, 2)                   # [B, num_queries, C]
 
         # Heads
