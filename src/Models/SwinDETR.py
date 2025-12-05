@@ -28,8 +28,8 @@ class SwinDETR(nn.Module):
         """
         feat = self.backbone(images)   # [B, C_out, H_s, W_s]
         outputs = self.detr_head(feat)
-        print("BACKBONE OUT SHAPE:", feat.shape)
-        print("BACKBONE stats mean/std:", feat.mean().item(), feat.std().item(), flush=True)
+        #print("BACKBONE OUT SHAPE:", feat.shape)
+        #print("BACKBONE stats mean/std:", feat.mean().item(), feat.std().item(), flush=True)
         return outputs
 
 
