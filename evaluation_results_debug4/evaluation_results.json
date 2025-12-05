@@ -1,0 +1,28 @@
+{
+  "mAP@0.5": 0.0010505869730956514,
+  "mAP@0.75": 9.970610437731156e-05,
+  "per_category_AP@0.5": {
+    "car": 0.0,
+    "pedestrian": 0.0014009962616109964,
+    "truck": 0.0,
+    "motorcycle": 0.0,
+    "bus": 0.009104873469345517,
+    "bicycle": 0.0,
+    "rider": 0.0,
+    "train": 0.0,
+    "caravan": 0.0,
+    "trailer": 0.0
+  },
+  "per_category_AP@0.75": {
+    "car": 0.0,
+    "pedestrian": 5.325508386188346e-06,
+    "truck": 0.0,
+    "motorcycle": 0.0,
+    "bus": 0.0009917355353869272,
+    "bicycle": 0.0,
+    "rider": 0.0,
+    "train": 0.0,
+    "caravan": 0.0,
+    "trailer": 0.0
+  }
+}
