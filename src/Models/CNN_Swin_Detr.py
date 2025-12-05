@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import math
+from .CNN_Swin import SwinDETRBackbone
 
 class Neck(nn.Module):
     def __init__(self, in_dim=1024, out_dim=256, num_encoder_layers=6, nhead=8, dim_feedforward=512):
@@ -93,4 +94,23 @@ class SwinDETR(nn.Module):
         decoder_output = self.decoder(encoder_output)  # [B, num_queries, d_model]
         # Prediction Head
         boxes, classes = self.head(decoder_output)
-        return boxes, classes
+        outputs = {
+        "pred_boxes": boxes,       # [B, num_queries, 4]
+        "pred_logits": classes     # [B, num_queries, num_classes+1]
+        }
+        return outputs
+
+def build_swin_detr(cfg):
+    backbone = SwinDETRBackbone(
+        embed_dim=cfg["model"]["embed_dim"],
+        num_heads=cfg["model"]["num_heads"],
+        num_blocks=cfg["model"]["num_blocks"],
+        window_size=cfg["model"]["window_size"]
+    )
+
+    model = SwinDETR(
+        backbone=backbone,
+        num_queries=cfg["model"]["decoder_queries"],
+        num_classes=cfg["model"]["num_classes"]
+    )
+    return model

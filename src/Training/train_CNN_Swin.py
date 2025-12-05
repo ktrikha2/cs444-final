@@ -12,7 +12,7 @@ sys.path.append(ROOT)
 
 from src.Dataset.Dataset import BDDDetectionDataset
 from src.Dataset.Transform import compose_transforms
-from src.Models.SwinDETR import build_swin_detr  # Should return your SwinDETR model
+from src.Models.CNN_Swin_Detr import build_swin_detr # Should return your SwinDETR model
 from src.Training.Utils import set_seed, save_checkpoint
 from src.Losses.HungarianMatcher import HungarianMatcher
 from src.Losses.Critertion import SetCriterion
