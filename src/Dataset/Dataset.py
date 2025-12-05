@@ -48,7 +48,7 @@ class BDDDetectionDataset(Dataset):
             # COCO bbox -> x, y, w, h
             x, y, w, h = a['bbox']
             boxes.append([x, y, w, h])
-            labels.append(a.get('category_id', 1))
+            labels.append(a['category_id'] - 1) #trying to fix 1 -10 versus 0 - 9
             areas.append(a.get('area', w * h))
             iscrowd.append(a.get('iscrowd', 0))
 
