@@ -9,12 +9,14 @@ data:
     val:   "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_val_10k.json"
     test:  "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_test_10k.json"
 
-
 model:
-  swin_variant: "swin_tiny_patch4_window7_224"
-  pretrained: true
-  out_channels: 768 
-  rpn_anchor_sizes: [[32, 64, 128, 256, 512]]
+  num_classes: 10
+  embed_dim: 128
+  num_heads: [4, 8, 16, 32]
+  num_blocks: [2, 2, 6, 2]
+  window_size: 7
+  neck_dim: 256
+  decoder_queries: 100
 
 training:
   epochs: 50
@@ -26,6 +28,5 @@ training:
   checkpoint_dir: "/work/nvme/bfdu/dsingh10/checkpoints/swin_run1"
   log_dir:  "/work/nvme/bfdu/dsingh10/logs/swin_run1"
   checkpoint_freq: 10
-
 
 seed: 42
