@@ -86,6 +86,7 @@ class SwinDetrHead(nn.Module):
         self.channel_reduction = nn.Conv2d(
             backbone_out_channels, self.hidden_dim, kernel_size=1
         )
+        self.input_norm = torch.nn.LayerNorm(self.hidden_dim)
 
         # pos encoding
         self.pos_enc = PositionalEncoding2D(self.hidden_dim)
@@ -147,10 +148,17 @@ class SwinDetrHead(nn.Module):
 
         #pos encoding
         pos = self.pos_enc(feat)            # [B, hidden_dim, H, W]
+        print("POS stats:", pos.mean().item(), pos.std().item())
+
         if feat.shape[1] != pos.shape[1]:
             print("FEAT:", feat.shape, "POS:", pos.shape, flush=True)
 
         feat = feat + pos
+
+        B,C,H,W = feat.shape
+        feat = feat.permute(0,2,3,1)
+        feat = self.input_norm(feat)
+        feat = feat.permute(0,3,1,2).contiguous()
 
         #  Flatten spatial dims for Transformer to  [S, B, C]
         feat_flat = feat.flatten(2).permute(2, 0, 1).contiguous()  # [H*W, B, C]
