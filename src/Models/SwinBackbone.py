@@ -26,6 +26,8 @@ class SwinBackbone(nn.Module):
             if isinstance(m, PatchEmbed):
                 m.strict_img_size = False
         # Number of channels in the last stage (C_out)
+        for p in self.swin.parameters():
+            p.requires_grad = False
         self.out_channels = self.swin.feature_info.channels()[-1]
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
