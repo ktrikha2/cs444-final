@@ -47,6 +47,8 @@ class SwinBackbone(nn.Module):
 
         feat = feat.permute(0, 3, 1, 2).contiguous() #changing from BCHW to BHWC in the tensor
 
+        print("BACKBONE OUT SHAPE:", feat.shape, flush=True)
+        
         return feat
 
 

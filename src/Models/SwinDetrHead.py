@@ -154,9 +154,12 @@ class SwinDetrHead(nn.Module):
 
         #  Flatten spatial dims for Transformer to  [S, B, C]
         feat_flat = feat.flatten(2).permute(2, 0, 1).contiguous()  # [H*W, B, C]
+        print("HEAD INPUT stats:", feat_flat.mean().item(), feat_flat.std().item(), flush=True)
 
         # Encoder
         memory = self.encoder(feat_flat)  # [S, B, C]
+        print("MEMORY stats:", memory.mean().item(), memory.std().item(), flush=True)
+
 
         # Object queries as decoder targets
         query_embed = self.query_embed.weight.unsqueeze(1).repeat(1, b, 1)  # [num_queries, B, C]
@@ -165,7 +168,7 @@ class SwinDetrHead(nn.Module):
         # Decoder
         hs = self.decoder(tgt=query_embed, memory=memory)  # [num_queries, B, C]
         hs = hs.permute(1, 0, 2)                   # [B, num_queries, C]
-
+        print("DECODER HS stats:", hs.mean().item(), hs.std().item(), flush=True)
         # Heads
         pred_logits = self.class_embed(hs)          # [B, num_queries, num_classes+1]
         pred_boxes  = self.bbox_embed(hs).sigmoid() # [B, num_queries, 4] in [0,1]
