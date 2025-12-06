@@ -38,8 +38,9 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
 
     for batch_idx, (images, targets) in enumerate(data_loader, start=1):
         t_data_start = time.time()
-        images = [img.to(device) for img in images]
-        batch_tensor = torch.stack(images, dim=0)
+        #images = [img.to(device) for img in images]
+        #batch_tensor = torch.stack(images, dim=0)
+        images = torch.stack(images).to(device, non_blocking=True)
 
         # Process targets
         processed_targets = []
