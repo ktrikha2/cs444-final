@@ -245,12 +245,14 @@ class SwinDETRBackbone(nn.Module):
         x_tokens = x_tokens.view(B, H * W, C)
 
         # Step 3: 4 Swin stages
-        x, H, W = self.stage1(x_tokens, H, W)
-        x, H, W = self.stage2(x, H, W)
-        x, H, W = self.stage3(x, H, W)
-        x, H, W = self.stage4(x, H, W)
+        x_tokens, H, W = self.stage1(x_tokens, H, W)
+        x_tokens, H, W = self.stage2(x_tokens, H, W)
+        x_tokens, H, W = self.stage3(x_tokens, H, W)
+        x_tokens, H, W = self.stage4(x_tokens, H, W)
 
-        return x, H, W
+        B, N, C_out = x_tokens.shape
+        x_feat = x_tokens.view(B,H,W,C_out).permute(0,3,1,2).contiguous()
+        return x_feat    # [B, C_out, H, W]
 
 # --- Example usage ---
 x = torch.randn(6, 3, 224, 224)  # batch_size=6

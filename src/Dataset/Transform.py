@@ -15,6 +15,12 @@ def random_horizontal_flip(image, target, p=0.5):
             target['boxes'] = boxes
     return image, target
 
+def normalize_image(image):
+    """Apply ImageNet normalization for pretrained Swin"""
+    mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+    std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+    return (image - mean) / std
+
 def xywh_to_xyxy(boxes):
     # boxes: [N, 4] = [x, y, w, h]
     x1 = boxes[:, 0]
@@ -40,5 +46,6 @@ def compose_transforms():
         image, target = random_horizontal_flip(image, target, p=0.5)
         #target["boxes"] = xywh_to_xyxy(target["boxes"])
         target = filter_invalid_boxes(target)
+        image = normalize_image(image)
         return image, target
     return transform

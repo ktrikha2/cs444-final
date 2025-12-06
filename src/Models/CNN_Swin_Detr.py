@@ -7,7 +7,7 @@ class Neck(nn.Module):
     def __init__(self, in_dim=1024, out_dim=256, num_encoder_layers=6, nhead=8, dim_feedforward=512):
         super().__init__()
         # 1x1 conv to reduce channels
-        self.conv1x1 = nn.Linear(in_dim, out_dim)
+        self.conv1x1 = nn.Conv2d(in_dim, out_dim, kernel_size=1) #changing from linear to conv 2d
         
         # Positional encoding
         self.pos_encoding = PositionalEncoding(out_dim)
@@ -17,8 +17,10 @@ class Neck(nn.Module):
         self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_encoder_layers)
 
     def forward(self, x):
-        # x: [B, N, C_in]
+        # x: [B, N, C_in] NOW IT IS [B, C_IN, H, W]
+        B,C,H,W = x.shape
         x = self.conv1x1(x)               # [B, N, out_dim]
+        x = x.flatten(2).transpose(1,2)
         x = x + self.pos_encoding(x)      # add positional encoding
         x = self.encoder(x)               # [B, N, out_dim]
         return x
@@ -87,9 +89,9 @@ class SwinDETR(nn.Module):
 
     def forward(self, x):
         # Backbone
-        features, H, W = self.backbone(x)  # [B, N, C_backbone]
+        features = self.backbone(x)  # [B, C_backbone, h, w]
         # Neck
-        encoder_output = self.neck(features)  # [B, N, d_model]
+        encoder_output = self.neck(features)  # Will be [B, N, d_model]
         # Decoder
         decoder_output = self.decoder(encoder_output)  # [B, num_queries, d_model]
         # Prediction Head
