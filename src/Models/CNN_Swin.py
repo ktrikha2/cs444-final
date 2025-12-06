@@ -255,8 +255,8 @@ class SwinDETRBackbone(nn.Module):
         return x_feat    # [B, C_out, H, W]
 
 # --- Example usage ---
-x = torch.randn(6, 3, 224, 224)  # batch_size=6
-backbone = SwinDETRBackbone()
-features, H_out, W_out = backbone(x)
-print("Final features shape:", features.shape)  # [B, N_final, C_final]
-print("Final H x W:", H_out, W_out)
+#x = torch.randn(6, 3, 224, 224)  # batch_size=6
+#backbone = SwinDETRBackbone()
+#features, H_out, W_out = backbone(x)
+#print("Final features shape:", features.shape)  # [B, N_final, C_final]
+#print("Final H x W:", H_out, W_out)
