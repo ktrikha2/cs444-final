@@ -1,13 +1,14 @@
 data:
-  root: "/work/nvme/bfdu/dsingh10/data/Dataset"
+  root: "/work/nvme/bfdu/ktrikha/data/Dataset"
   images:
-    train: "/work/nvme/bfdu/dsingh10/data/Dataset/train"
-    val:   "/work/nvme/bfdu/dsingh10/data/Dataset/val"
-    test:  "/work/nvme/bfdu/dsingh10/data/Dataset/test"
+    train: "/work/nvme/bfdu/ktrikha/data/Dataset/train"
+    val:   "/work/nvme/bfdu/ktrikha/data/Dataset/val"
+    test:  "/work/nvme/bfdu/ktrikha/data/Dataset/test"
   annotations:
-    train: "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_train_10k.json"
-    val:   "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_val_10k.json"
-    test:  "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_test_10k.json"
+    train: "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_train_10k.json"
+    val:   "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
+    test:  "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_test_10k.json"
+
 
 model:
   num_classes: 10
@@ -19,14 +20,14 @@ model:
   decoder_queries: 100
 
 training:
-  epochs: 50
+  epochs: 2
   batch_size: 2
   lr: 0.0001
   weight_decay: 0.0001
   num_workers: 16
   device: "cuda"
-  checkpoint_dir: "/work/nvme/bfdu/dsingh10/checkpoints/swin_run1"
-  log_dir:  "/work/nvme/bfdu/dsingh10/logs/swin_run1"
-  checkpoint_freq: 10
+  checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_run4"
+  log_dir:  "/work/nvme/bfdu/ktrikha/logs/swin_run4"
+  checkpoint_freq: 2
 
 seed: 42
