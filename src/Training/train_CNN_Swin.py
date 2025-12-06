@@ -52,15 +52,16 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
         data_time += time.time() - t_data_start
 
         # Forward pass
+        optimizer.zero_grad(set_to_none=True)
         t_fwd = time.time()
-        with autocast(enabled=use_cuda_amp):
+        with torch.cuda.amp.autocast(enabled=use_cuda_amp):
             outputs = model(images)
-            forward_time += time.time() - t_fwd
+        forward_time += time.time() - t_fwd
 
-            t_loss = time.time()
-            loss_dict = criterion(outputs, processed_targets)
-            loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict.keys())
-            loss_time += time.time() - t_loss
+        t_loss = time.time()
+        loss_dict = criterion(outputs, processed_targets)
+        loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict)
+        loss_time += time.time() - t_loss
 
         # Backward
         t_bwd = time.time()
