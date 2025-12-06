@@ -57,9 +57,14 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
         with torch.cuda.amp.autocast(enabled=use_cuda_amp):
             outputs = model(images)
         forward_time += time.time() - t_fwd
-
+        
+        # IMPORTANT: convert outputs to FP32 for Hungarian matcher
+        outputs_fp32 = {
+            k: v.float() if isinstance(v, torch.Tensor) else v
+            for k, v in outputs.items()
+        }
         t_loss = time.time()
-        loss_dict = criterion(outputs, processed_targets)
+        loss_dict = criterion(outputs_fp32, processed_targets)
         loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict)
         loss_time += time.time() - t_loss
 
