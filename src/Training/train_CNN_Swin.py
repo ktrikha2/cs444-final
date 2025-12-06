@@ -65,7 +65,7 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
 
         # Backward
         t_bwd = time.time()
-        optimizer.zero_grad(set_to_none=True)
+        #optimizer.zero_grad(set_to_none=True)
         scaler.scale(loss).backward()
         #loss.backward()
         backward_time += time.time() - t_bwd
@@ -73,6 +73,7 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
         # Optimizer step
         t_opt = time.time()
         scaler.step(optimizer)
+        scaler.update()
         #optimizer.step()
         optim_time += time.time() - t_opt
 
