@@ -52,7 +52,7 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
 
         # Forward pass
         t_fwd = time.time()
-        with autocast(device_type="cuda", dtype=torch.float16, enabled=use_cuda_amp):
+        with autocast(enabled=use_cuda_amp):
             outputs = model(images)
             forward_time += time.time() - t_fwd
 
