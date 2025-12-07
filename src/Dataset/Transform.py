@@ -23,6 +23,12 @@ def xywh_to_xyxy(boxes):
     y2 = boxes[:, 1] + boxes[:, 3]
     return torch.stack([x1, y1, x2, y2], dim=1)
 
+def normalize_image(image):
+    """Apply ImageNet normalization for pretrained Swin"""
+    mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+    std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+    return (image - mean) / std
+
 def filter_invalid_boxes(target):
     boxes = target["boxes"]
 
@@ -40,5 +46,6 @@ def compose_transforms():
         image, target = random_horizontal_flip(image, target, p=0.5)
         #target["boxes"] = xywh_to_xyxy(target["boxes"])
         target = filter_invalid_boxes(target)
+        image = normalize_image(image)
         return image, target
     return transform

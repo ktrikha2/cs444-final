@@ -5,6 +5,7 @@ import yaml
 import torch
 from torch.utils.data import DataLoader
 import time
+from torch.cuda.amp import autocast, GradScaler
 
 # Adjust this path to your project root
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -25,18 +26,20 @@ def parse_args():
     parser.add_argument("--config", required=True)
     return parser.parse_args()
 
-def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, epoch):
+def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, epoch, scaler):
     model.train()
     criterion.train()
     running_loss = 0.0
 
     epoch_t0 = time.time()
     data_time = forward_time = loss_time = backward_time = optim_time = 0.0
+    use_cuda_amp = (device.type == "cuda")
 
     for batch_idx, (images, targets) in enumerate(data_loader, start=1):
         t_data_start = time.time()
-        images = [img.to(device) for img in images]
-        batch_tensor = torch.stack(images, dim=0)
+        #images = [img.to(device) for img in images]
+        #batch_tensor = torch.stack(images, dim=0)
+        images = torch.stack(images).to(device, non_blocking=True)
 
         # Process targets
         processed_targets = []
@@ -48,25 +51,34 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
         data_time += time.time() - t_data_start
 
         # Forward pass
+        optimizer.zero_grad(set_to_none=True)
         t_fwd = time.time()
-        outputs = model(batch_tensor)
+        with torch.cuda.amp.autocast(enabled=use_cuda_amp):
+            outputs = model(images)
         forward_time += time.time() - t_fwd
-
-        # Compute loss
+        
+        # IMPORTANT: convert outputs to FP32 for Hungarian matcher
+        outputs_fp32 = {
+            k: v.float() if isinstance(v, torch.Tensor) else v
+            for k, v in outputs.items()
+        }
         t_loss = time.time()
-        loss_dict = criterion(outputs, processed_targets)
-        loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict.keys())
+        loss_dict = criterion(outputs_fp32, processed_targets)
+        loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict)
         loss_time += time.time() - t_loss
 
         # Backward
         t_bwd = time.time()
-        optimizer.zero_grad()
-        loss.backward()
+        #optimizer.zero_grad(set_to_none=True)
+        scaler.scale(loss).backward()
+        #loss.backward()
         backward_time += time.time() - t_bwd
 
         # Optimizer step
         t_opt = time.time()
-        optimizer.step()
+        scaler.step(optimizer)
+        scaler.update()
+        #optimizer.step()
         optim_time += time.time() - t_opt
 
         running_loss += loss.item()
@@ -145,13 +157,14 @@ def main():
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=cfg["training"]["lr"], weight_decay=1e-4
     )
+    scaler = GradScaler() #trying to add this for speed up 
 
     num_epochs = cfg["training"]["epochs"]
     os.makedirs(cfg["training"]["checkpoint_dir"], exist_ok=True)
 
     # In main() change:
     for epoch in range(1, num_epochs + 1):
-        loss = train_epoch(model, criterion, train_loader, optimizer, device, weight_dict, epoch)
+        loss = train_epoch(model, criterion, train_loader, optimizer, device, weight_dict, epoch, scaler)
         print(f"Epoch {epoch}/{num_epochs} Completed | Avg Loss: {loss:.4f}")
 
         if epoch % cfg["training"]["checkpoint_freq"] == 0:
