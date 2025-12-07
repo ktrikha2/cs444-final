@@ -24,15 +24,15 @@ model:
 
 
 training:
-  epochs: 50              
+  epochs: 150              
   batch_size: 2
   lr: 0.0001
   weight_decay: 0.0001
   num_workers: 16             # Reduce for first test
   device: "cuda"
-  checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_run3"
-  log_dir:  "/work/nvme/bfdu/ktrikha/logs/swindetr_run3"
-  checkpoint_freq: 10      
+  checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swinprelong"
+  log_dir:  "/work/nvme/bfdu/ktrikha/logs/swinprelong"
+  checkpoint_freq: 15      
 
 
 seed: 42
