@@ -18,7 +18,7 @@ class Neck(nn.Module):
 
     def forward(self, x):
         # x: [B, N, C_in] NOW IT IS [B, C_IN, H, W]
-        print("Neck input:", x.mean().item(), x.std().item()) 
+        #print("Neck input:", x.mean().item(), x.std().item()) 
         B,C,H,W = x.shape
         x = self.conv1x1(x)               # [B, N, out_dim]
 
@@ -27,14 +27,14 @@ class Neck(nn.Module):
         pos = pe_2d.unsqueeze(0).repeat(B,1,1)
 
         x = x.flatten(2).transpose(1,2)
-        print("After 1x1 conv:", x.mean().item(), x.std().item())
+        #print("After 1x1 conv:", x.mean().item(), x.std().item())
         #pos = self.pos_encoding(x)
-        print("PosEnc stats:", pos.mean().item(), pos.std().item())
+        #print("PosEnc stats:", pos.mean().item(), pos.std().item())
         x = x + pos     # add positional encoding
-        print("After adding pos:", x.mean().item(), x.std().item())
+        #print("After adding pos:", x.mean().item(), x.std().item())
 
         x = self.encoder(x)               # [B, N, out_dim]
-        print("Neck encoder out:", x.mean().item(), x.std().item())
+        #print("Neck encoder out:", x.mean().item(), x.std().item())
 
         return x
 
@@ -92,13 +92,18 @@ class DETRDecoder(nn.Module):
     def forward(self, encoder_output):
         # encoder_output: [B, N, d_model]
         B = encoder_output.size(0)
-        print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
+        #print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
         tgt = self.tgt_embed.weight.unsqueeze(0).repeat(B, 1, 1)
 
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
         tgt_with_pos = tgt + queries
+        with torch.no_grad():
+            print("query_embed std:", self.query_embed.weight.std(dim=0).mean().item())
+            print("tgt_embed std:", self.tgt_embed.weight.std(dim=0).mean().item())
+            print("tgt (content query) mean/std:", tgt.mean().item(), tgt.std().item())
+            print("queries (pos query) mean/std:", queries.mean().item(), queries.std().item())
         out = self.decoder(tgt=tgt_with_pos, memory=encoder_output)          # [B, num_queries, d_model]
-        print("Decoder output:", out.mean().item(), out.std().item())
+        #print("Decoder output:", out.mean().item(), out.std().item())
         return out
 
 class PredictionHead(nn.Module):
@@ -120,10 +125,10 @@ class PredictionHead(nn.Module):
 
     def forward(self, x):
         # x: [B, num_queries, d_model]
-        print("Head input:", x.mean().item(), x.std().item())
+        #print("Head input:", x.mean().item(), x.std().item())
 
         boxes = self.bbox_mlp(x).sigmoid()   # normalized coordinates
-        print("Raw bbox mlp:", boxes.mean().item(), boxes.std().item())
+        #print("Raw bbox mlp:", boxes.mean().item(), boxes.std().item())
         classes = self.class_embed(x)        # logits for softmax later
         return boxes, classes
 
@@ -138,13 +143,21 @@ class SwinDETR(nn.Module):
     def forward(self, x):
         # Backbone
         features = self.backbone(x)  # [B, C_backbone, h, w]
-        print("Backbone features:", features.mean().item(), features.std().item())
+        #print("Backbone features:", features.mean().item(), features.std().item())
 
         # Neck
         encoder_output = self.neck(features)  # Will be [B, N, d_model]
         # Decoder
         decoder_output = self.decoder(encoder_output)  # [B, num_queries, d_model]
         # Prediction Head
+        with torch.no_grad():
+            if encoder_output.size(0) > 1: # Only if batch size > 1
+                diff = (encoder_output[0] - encoder_output[1]).abs().mean().item()
+                print("encoder_output image difference:", diff)
+            # std_across_queries is the std for each dimension, calculated across all queries.
+            std_across_queries = decoder_output[0].std(dim=0) 
+            print("decoder output per-query std (mean):", std_across_queries.mean().item())
+            print("decoder output per-query std (min):", std_across_queries.min().item())
         boxes, classes = self.head(decoder_output)
         outputs = {
             "pred_boxes": boxes,       # [B, num_queries, 4]
