@@ -274,16 +274,16 @@ class SwinDETRBackbone(nn.Module):
 
         # Step 3: 4 Swin stages
         x_tokens, H, W = self.stage1(x_tokens, H, W)
-        print("Stage1:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
+        #print("Stage1:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
 
         x_tokens, H, W = self.stage2(x_tokens, H, W)
-        print("Stage2:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
+        #print("Stage2:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
 
         x_tokens, H, W = self.stage3(x_tokens, H, W)
-        print("Stage3:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
+        #print("Stage3:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
 
         x_tokens, H, W = self.stage4(x_tokens, H, W)
-        print("Stage4:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
+       #print("Stage4:", x_tokens.mean().item(), x_tokens.std().item(), "H=", H, "W=", W)
 
 
         B, N, C_out = x_tokens.shape

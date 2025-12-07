@@ -97,11 +97,11 @@ class DETRDecoder(nn.Module):
 
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
         tgt_with_pos = tgt + queries
-        with torch.no_grad():
-            print("query_embed std:", self.query_embed.weight.std(dim=0).mean().item())
-            print("tgt_embed std:", self.tgt_embed.weight.std(dim=0).mean().item())
-            print("tgt (content query) mean/std:", tgt.mean().item(), tgt.std().item())
-            print("queries (pos query) mean/std:", queries.mean().item(), queries.std().item())
+        #with torch.no_grad():
+            #print("query_embed std:", self.query_embed.weight.std(dim=0).mean().item())
+            #print("tgt_embed std:", self.tgt_embed.weight.std(dim=0).mean().item())
+            #print("tgt (content query) mean/std:", tgt.mean().item(), tgt.std().item())
+            #print("queries (pos query) mean/std:", queries.mean().item(), queries.std().item())
         out = self.decoder(tgt=tgt_with_pos, memory=encoder_output)          # [B, num_queries, d_model]
         #print("Decoder output:", out.mean().item(), out.std().item())
         return out
@@ -119,6 +119,10 @@ class PredictionHead(nn.Module):
         )
         nn.init.constant_(self.bbox_mlp[-1].bias.data, 0)
         nn.init.constant_(self.bbox_mlp[-1].weight.data, 0)
+        print("INIT CHECK:", 
+            self.bbox_mlp[-1].weight.std().item(), 
+            self.bbox_mlp[-1].bias.std().item())
+
         # Linear layer for class prediction
         self.class_embed = nn.Linear(d_model, num_classes + 1)  # +1 for "no object" class
         prior_prob = 0.01
@@ -131,8 +135,8 @@ class PredictionHead(nn.Module):
 
         boxes = self.bbox_mlp(x).sigmoid()   # normalized coordinates
         #print("Raw bbox mlp:", boxes.mean().item(), boxes.std().item())
-        print("bbox layer final weight std:", self.bbox_mlp[-1].weight.std().item())
-        print("bbox layer final bias std:", self.bbox_mlp[-1].bias.std().item())
+        #print("bbox layer final weight std:", self.bbox_mlp[-1].weight.std().item())
+        #print("bbox layer final bias std:", self.bbox_mlp[-1].bias.std().item())
         classes = self.class_embed(x)        # logits for softmax later
         return boxes, classes
 
@@ -157,11 +161,11 @@ class SwinDETR(nn.Module):
         with torch.no_grad():
             if encoder_output.size(0) > 1: # Only if batch size > 1
                 diff = (encoder_output[0] - encoder_output[1]).abs().mean().item()
-                print("encoder_output image difference:", diff)
+                #print("encoder_output image difference:", diff)
             # std_across_queries is the std for each dimension, calculated across all queries.
             std_across_queries = decoder_output[0].std(dim=0) 
-            print("decoder output per-query std (mean):", std_across_queries.mean().item())
-            print("decoder output per-query std (min):", std_across_queries.min().item())
+            #print("decoder output per-query std (mean):", std_across_queries.mean().item())
+            #print("decoder output per-query std (min):", std_across_queries.min().item())
         boxes, classes = self.head(decoder_output)
         outputs = {
             "pred_boxes": boxes,       # [B, num_queries, 4]
