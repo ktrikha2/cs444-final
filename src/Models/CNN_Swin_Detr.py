@@ -80,6 +80,8 @@ class DETRDecoder(nn.Module):
         # Learnable object queries
         self.num_queries = num_queries
         self.query_embed = nn.Embedding(num_queries, d_model)
+
+        self.tgt_embed = nn.Embedding(num_queries, d_model)
         
         # Transformer decoder
         decoder_layer = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward, batch_first=True)
@@ -89,9 +91,11 @@ class DETRDecoder(nn.Module):
         # encoder_output: [B, N, d_model]
         B = encoder_output.size(0)
         print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
+        tgt = self.tgt_embed.weight.unsqueeze(0).repeat(B, 1, 1)
 
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
-        out = self.decoder(tgt=queries, memory=encoder_output)          # [B, num_queries, d_model]
+        tgt_with_pos = tgt + queries
+        out = self.decoder(tgt=tgt_with_pos, memory=encoder_output)          # [B, num_queries, d_model]
         print("Decoder output:", out.mean().item(), out.std().item())
         return out
 
@@ -138,8 +142,8 @@ class SwinDETR(nn.Module):
         # Prediction Head
         boxes, classes = self.head(decoder_output)
         outputs = {
-        "pred_boxes": boxes,       # [B, num_queries, 4]
-        "pred_logits": classes     # [B, num_queries, num_classes+1]
+            "pred_boxes": boxes,       # [B, num_queries, 4]
+            "pred_logits": classes     # [B, num_queries, num_classes+1]
         }
         return outputs
 
