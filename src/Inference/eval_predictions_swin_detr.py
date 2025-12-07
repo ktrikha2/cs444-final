@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.append(ROOT)
 
 from src.Dataset.Dataset import BDDDetectionDataset
-from src.Models.SwinDETR import build_swin_detr
+from src.Models.CNN_Swin_Detr import build_swin_detr
 from src.Training.boxes_helper import box_cxcywh_to_xywh
 
 
