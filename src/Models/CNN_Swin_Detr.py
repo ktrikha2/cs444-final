@@ -117,6 +117,8 @@ class PredictionHead(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, 4)   # [cx, cy, w, h], normalized
         )
+        nn.init.constant_(self.bbox_mlp[-1].bias.data, 0)
+        nn.init.constant_(self.bbox_mlp[-1].weight.data, 0)
         # Linear layer for class prediction
         self.class_embed = nn.Linear(d_model, num_classes + 1)  # +1 for "no object" class
         prior_prob = 0.01
@@ -129,6 +131,8 @@ class PredictionHead(nn.Module):
 
         boxes = self.bbox_mlp(x).sigmoid()   # normalized coordinates
         #print("Raw bbox mlp:", boxes.mean().item(), boxes.std().item())
+        print("bbox layer final weight std:", self.bbox_mlp[-1].weight.std().item())
+        print("bbox layer final bias std:", self.bbox_mlp[-1].bias.std().item())
         classes = self.class_embed(x)        # logits for softmax later
         return boxes, classes
 
