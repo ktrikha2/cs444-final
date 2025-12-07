@@ -21,9 +21,14 @@ class Neck(nn.Module):
         print("Neck input:", x.mean().item(), x.std().item()) 
         B,C,H,W = x.shape
         x = self.conv1x1(x)               # [B, N, out_dim]
+
+        device = x.device
+        pe_2d = self.pos_encoding(H, W, device)
+        pos = pe_2d.unsqueeze(0).repeat(B,1,1)
+
         x = x.flatten(2).transpose(1,2)
         print("After 1x1 conv:", x.mean().item(), x.std().item())
-        pos = self.pos_encoding(x)
+        #pos = self.pos_encoding(x)
         print("PosEnc stats:", pos.mean().item(), pos.std().item())
         x = x + pos     # add positional encoding
         print("After adding pos:", x.mean().item(), x.std().item())
@@ -34,20 +39,40 @@ class Neck(nn.Module):
         return x
 
 class PositionalEncoding(nn.Module):
-    """Sine-cosine positional encoding"""
-    def __init__(self, d_model, max_len=5000):
+    """2D Sine-cosine positional encoding (DETR-style), dynamic size"""
+    def __init__(self, d_model, temperature=10000):
         super().__init__()
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0)  # [1, max_len, d_model]
-        self.register_buffer('pe', pe)
+        self.d_model = d_model
+        self.temperature = temperature
+        
+        d_quarter = d_model // 4
+        
+        # Precompute the division term once
+        div_term = torch.exp(torch.arange(0, d_quarter, 
+                                          dtype=torch.float32) * (-math.log(temperature) / d_quarter))
+        self.register_buffer('div_term', div_term)
 
-    def forward(self, x):
-        # x: [B, N, d_model]
-        return self.pe[:, :x.size(1), :]
+    def forward(self, H, W, device):
+  
+        y_embed = torch.arange(H, dtype=torch.float32, device=device).unsqueeze(1)
+        x_embed = torch.arange(W, dtype=torch.float32, device=device).unsqueeze(1)
+        
+       
+        pe_x = x_embed * self.div_term
+        pe_y = y_embed * self.div_term
+
+        # stacking sin/cos
+        pe_x = torch.stack([pe_x.sin(), pe_x.cos()], dim=-1).flatten(1) 
+        pe_y = torch.stack([pe_y.sin(), pe_y.cos()], dim=-1).flatten(1) 
+        
+
+        pe_x_2d = pe_x.unsqueeze(0).repeat(H, 1, 1)
+        pe_y_2d = pe_y.unsqueeze(1).repeat(1, W, 1)
+        
+        pe = torch.cat([pe_y_2d, pe_x_2d], dim=-1)
+
+        # Flatten: [H*W, d_model]
+        return pe.flatten(0, 1)
 
 class DETRDecoder(nn.Module):
     def __init__(self, d_model=256, num_queries=100, nhead=8, num_layers=6, dim_feedforward=512):

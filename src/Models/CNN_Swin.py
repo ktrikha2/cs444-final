@@ -89,6 +89,28 @@ class WindowAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_dropout)
 
+        #Define relative position bias table (learnable parameter)
+        table_size = (2 * window_size - 1) * (2 * window_size - 1)
+        self.relative_position_bias_table = nn.Parameter(
+            torch.zeros(table_size, num_heads)
+        ) 
+        #coords for relative positive index 
+        coords_h = torch.arange(self.window_size)
+        coords_w = torch.arange(self.window_size)
+        coords = torch.stack(torch.meshgrid([coords_h, coords_w], indexing='ij'))  # 2, Ws, Ws
+        coords_flatten = torch.flatten(coords, 1)  # 2, Ws*Ws
+
+        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]
+        # relative_coords: (Ws*Ws, Ws*Ws, 2)
+        relative_coords = relative_coords.permute(1, 2, 0).contiguous() 
+        relative_coords[:, :, 0] += self.window_size - 1  # shift to be positive: [0, 2*Ws-2]
+        relative_coords[:, :, 1] += self.window_size - 1
+        relative_coords[:, :, 0] *= 2 * self.window_size - 1 #mapping back to 1 d index
+        relative_position_index = relative_coords.sum(-1) 
+        self.register_buffer("relative_position_index", relative_position_index)
+        nn.init.trunc_normal_(self.relative_position_bias_table, std=.02)
+
+
     def forward(self, x, mask: torch.Tensor = None):
         """
         x: (B_*N_windows, N, C)
@@ -99,6 +121,12 @@ class WindowAttention(nn.Module):
         q, k, v = qkv.permute(2, 0, 3, 1, 4)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
+        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+            self.window_size * self.window_size, self.window_size * self.window_size, -1
+        )  # Ws*Ws, Ws*Ws, nH
+        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Ws*Ws, Ws*Ws
+        attn = attn + relative_position_bias.unsqueeze(0)
+
         if mask is not None:
             nW = mask.shape[0]
             B = B_ // nW
