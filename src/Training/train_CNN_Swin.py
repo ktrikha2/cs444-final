@@ -155,8 +155,24 @@ def main():
     # -----------------------------
     # Optimizer
     # -----------------------------
+    def is_backbone_param(name):
+        return "backbone" in os.name or "downsample_cnn" in name
+    param_dicts = [
+        {
+        # Transformer/Head LR (only includes names WITHOUT 'backbone' or 'downsample_cnn')
+            "params": [p for n, p in model.named_parameters() if not is_backbone_param(n) and p.requires_grad],
+            "lr": cfg["training"]["lr"], 
+            "weight_decay": cfg["training"]["weight_decay"], 
+        },
+        {
+        # Backbone LR (only includes names WITH 'backbone' or 'downsample_cnn')
+            "params": [p for n, p in model.named_parameters() if is_backbone_param(n) and p.requires_grad],
+            "lr": cfg["training"]["lr"] * 0.1, # 1/10th rate
+            "weight_decay": cfg["training"]["weight_decay"], 
+        },
+    ]
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=cfg["training"]["lr"], weight_decay=1e-4
+        param_dicts, weight_decay=cfg["training"]["weight_decay"]
     )
     scaler = GradScaler() #trying to add this for speed up 
 

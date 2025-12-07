@@ -45,6 +45,7 @@ class PositionalEncoding(nn.Module):
         self.d_model = d_model
         self.temperature = temperature
         
+        # We need d_model // 2 for X and Y combined
         d_quarter = d_model // 4
         
         # Precompute the division term once
@@ -53,22 +54,23 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('div_term', div_term)
 
     def forward(self, H, W, device):
-  
+        # Create coordinates
         y_embed = torch.arange(H, dtype=torch.float32, device=device).unsqueeze(1)
         x_embed = torch.arange(W, dtype=torch.float32, device=device).unsqueeze(1)
         
-       
+        # pe_x, pe_y: [*, d_quarter]
         pe_x = x_embed * self.div_term
         pe_y = y_embed * self.div_term
 
-        # stacking sin/cos
+        # pe_x: [W, d_model/2], pe_y: [H, d_model/2] (by stacking sin/cos)
         pe_x = torch.stack([pe_x.sin(), pe_x.cos()], dim=-1).flatten(1) 
         pe_y = torch.stack([pe_y.sin(), pe_y.cos()], dim=-1).flatten(1) 
         
-
+        # Combine to 2D grid
         pe_x_2d = pe_x.unsqueeze(0).repeat(H, 1, 1)
         pe_y_2d = pe_y.unsqueeze(1).repeat(1, W, 1)
         
+        # Final PE: [H, W, d_model]
         pe = torch.cat([pe_y_2d, pe_x_2d], dim=-1)
 
         # Flatten: [H*W, d_model]
@@ -112,6 +114,9 @@ class PredictionHead(nn.Module):
         )
         # Linear layer for class prediction
         self.class_embed = nn.Linear(d_model, num_classes + 1)  # +1 for "no object" class
+        prior_prob = 0.01
+        bias_value = -math.log((1 - prior_prob) / prior_prob)
+        nn.init.constant_(self.class_embed.bias.data[num_classes], bias_value)
 
     def forward(self, x):
         # x: [B, num_queries, d_model]
