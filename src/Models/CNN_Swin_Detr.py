@@ -18,11 +18,19 @@ class Neck(nn.Module):
 
     def forward(self, x):
         # x: [B, N, C_in] NOW IT IS [B, C_IN, H, W]
+        print("Neck input:", x.mean().item(), x.std().item()) 
         B,C,H,W = x.shape
         x = self.conv1x1(x)               # [B, N, out_dim]
         x = x.flatten(2).transpose(1,2)
-        x = x + self.pos_encoding(x)      # add positional encoding
+        print("After 1x1 conv:", x.mean().item(), x.std().item())
+        pos = self.pos_encoding(x)
+        print("PosEnc stats:", pos.mean().item(), pos.std().item())
+        x = x + pos     # add positional encoding
+        print("After adding pos:", x.mean().item(), x.std().item())
+
         x = self.encoder(x)               # [B, N, out_dim]
+        print("Neck encoder out:", x.mean().item(), x.std().item())
+
         return x
 
 class PositionalEncoding(nn.Module):
@@ -55,8 +63,11 @@ class DETRDecoder(nn.Module):
     def forward(self, encoder_output):
         # encoder_output: [B, N, d_model]
         B = encoder_output.size(0)
+        print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
+
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
         out = self.decoder(tgt=queries, memory=encoder_output)          # [B, num_queries, d_model]
+        print("Decoder output:", out.mean().item(), out.std().item())
         return out
 
 class PredictionHead(nn.Module):
@@ -75,7 +86,10 @@ class PredictionHead(nn.Module):
 
     def forward(self, x):
         # x: [B, num_queries, d_model]
+        print("Head input:", x.mean().item(), x.std().item())
+
         boxes = self.bbox_mlp(x).sigmoid()   # normalized coordinates
+        print("Raw bbox mlp:", boxes.mean().item(), boxes.std().item())
         classes = self.class_embed(x)        # logits for softmax later
         return boxes, classes
 
@@ -90,6 +104,8 @@ class SwinDETR(nn.Module):
     def forward(self, x):
         # Backbone
         features = self.backbone(x)  # [B, C_backbone, h, w]
+        print("Backbone features:", features.mean().item(), features.std().item())
+
         # Neck
         encoder_output = self.neck(features)  # Will be [B, N, d_model]
         # Decoder
