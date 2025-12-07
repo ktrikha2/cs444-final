@@ -33,8 +33,6 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict):
     criterion.train()
     running_loss = 0.0
 
-
-
     #TIMING TO SEE BOTTLENECK
     epoch_t0 = time.time()
 
@@ -47,7 +45,6 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict):
     for images, targets in data_loader:
         # images: tuple of tensors [3,H,W]; targets: tuple of dicts
         t_data_start = time.time()
-
 
         images = [img.to(device) for img in images]
         batch_tensor = torch.stack(images, dim=0)  # [B,3,H,W]

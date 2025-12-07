@@ -3,7 +3,7 @@
 #SBATCH --job-name=swin_detr       # updated job name
 #SBATCH --account=bfdu-dtai-gh
 #SBATCH --partition=ghx4
-#SBATCH --time=03:00:00
+#SBATCH --time=12:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=32
 #SBATCH --gpus=1
