@@ -168,14 +168,13 @@ class SwinDETR(nn.Module):
         # Decoder
         decoder_output = self.decoder(encoder_output)  # [B, num_queries, d_model]
         # Prediction Head
-        with torch.no_grad():
-            if encoder_output.size(0) > 1: # Only if batch size > 1
-                diff = (encoder_output[0] - encoder_output[1]).abs().mean().item()
-                #print("encoder_output image difference:", diff)
-            # std_across_queries is the std for each dimension, calculated across all queries.
-            std_across_queries = decoder_output[0].std(dim=0) 
-            #print("decoder output per-query std (mean):", std_across_queries.mean().item())
-            #print("decoder output per-query std (min):", std_across_queries.min().item())
+        if self.training and torch.rand(1).item() < 0.01:
+            std_queries = decoder_output.std(dim=1).mean().item()
+            print(f"\n[DEBUG] Decoder Output Variance (Std across queries): {std_queries:.6f}")
+            if std_queries < 0.001:
+                print("DECODER COLLAPSED (Inputs identical)")
+            else:
+                print("DECODER HEALTHY (Inputs diverse)")
         boxes, classes = self.head(decoder_output)
         outputs = {
             "pred_boxes": boxes,       # [B, num_queries, 4]
