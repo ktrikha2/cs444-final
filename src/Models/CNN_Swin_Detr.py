@@ -21,12 +21,15 @@ class Neck(nn.Module):
         #print("Neck input:", x.mean().item(), x.std().item()) 
         B,C,H,W = x.shape
         x = self.conv1x1(x)               # [B, N, out_dim]
+        x = x.permute(0,2,3,1).contiguous()  # [B, H, W, out_dim]
+        x = x.view(B, H*W, -1)              # [B, N, out_dim]
+
 
         device = x.device
         pe_2d = self.pos_encoding(H, W, device)
-        pos = pe_2d.unsqueeze(0).repeat(B,1,1)
+        pos = pe_2d.expand(B, -1, -1)  # [B, N, out_dim]
 
-        x = x.flatten(2).transpose(1,2)
+        #x = x.flatten(2).transpose(1,2)
         #print("After 1x1 conv:", x.mean().item(), x.std().item())
         #pos = self.pos_encoding(x)
         #print("PosEnc stats:", pos.mean().item(), pos.std().item())
