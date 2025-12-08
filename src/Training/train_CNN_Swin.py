@@ -41,7 +41,8 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
         #images = [img.to(device) for img in images]
         #batch_tensor = torch.stack(images, dim=0)
         images = torch.stack(images).to(device, non_blocking=True)
-
+        print("Batch images mean/std:", images.mean().item(), images.std().item())
+        print("image min/max:", images.min().item(), images.max().item())
         # Process targets
         processed_targets = []
         for img, t in zip(images, targets):
@@ -179,7 +180,6 @@ def main():
     num_epochs = cfg["training"]["epochs"]
     os.makedirs(cfg["training"]["checkpoint_dir"], exist_ok=True)
 
-    # In main() change:
     for epoch in range(1, num_epochs + 1):
         loss = train_epoch(model, criterion, train_loader, optimizer, device, weight_dict, epoch, scaler)
         print(f"Epoch {epoch}/{num_epochs} Completed | Avg Loss: {loss:.4f}")

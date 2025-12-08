@@ -35,9 +35,9 @@ class Neck(nn.Module):
 
         x = self.encoder(x)               # [B, N, out_dim]
         #print("Neck encoder out:", x.mean().item(), x.std().item())\
-        print("Encoder output mean/std:", x.mean().item(), x.std().item())
-        print("Encoder output spatial diff:",
-            (x[:,1:,:] - x[:,:-1,:]).abs().mean().item())
+        #print("Encoder output mean/std:", x.mean().item(), x.std().item())
+        #print("Encoder output spatial diff:",
+            #(x[:,1:,:] - x[:,:-1,:]).abs().mean().item())
 
         return x
 

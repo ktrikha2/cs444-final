@@ -143,22 +143,6 @@ class WindowAttention(nn.Module):
 
 # --- Swin Transformer Block ---
 class SwinTransformerBlock(nn.Module):
-    # def __init__(self, dim, num_heads, window_size=7, shift_size = 0, mlp_ratio=4.0):
-    #     super().__init__()
-    #     self.norm1 = nn.LayerNorm(dim)
-    #     self.attn = WindowAttention(dim, num_heads, window_size)
-    #     self.norm2 = nn.LayerNorm(dim)
-    #     self.mlp = nn.Sequential(
-    #         nn.Linear(dim, int(dim * mlp_ratio)),
-    #         nn.GELU(),
-    #         nn.Linear(int(dim * mlp_ratio), dim)
-    #     )
-
-    # def forward(self, x):
-    #     x = x + self.attn(self.norm1(x))
-    #     x = x + self.mlp(self.norm2(x))
-    #     return x
-
     def __init__(self, dim, num_heads, window_size=7,shift_size=0, mlp_ratio=4.0):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
@@ -300,16 +284,16 @@ class SwinDETRBackbone(nn.Module):
 
         # Step 3: 4 Swin stages
         x_tokens, H, W = self.stage1(x_tokens, H, W)
-        print("Stage1:", x_tokens.mean().item(), x_tokens.std().item())
+        #print("Stage1:", x_tokens.mean().item(), x_tokens.std().item())
 
         x_tokens, H, W = self.stage2(x_tokens, H, W)
-        print("Stage2:", x_tokens.mean().item(), x_tokens.std().item())
+        #print("Stage2:", x_tokens.mean().item(), x_tokens.std().item())
 
         x_tokens, H, W = self.stage3(x_tokens, H, W)
-        print("Stage3:", x_tokens.mean().item(), x_tokens.std().item())
+        #print("Stage3:", x_tokens.mean().item(), x_tokens.std().item())
 
         x_tokens, H, W = self.stage4(x_tokens, H, W)
-        print("Stage4:", x_tokens.mean().item(), x_tokens.std().item())
+        #print("Stage4:", x_tokens.mean().item(), x_tokens.std().item())
 
 
         B, N, C_out = x_tokens.shape
