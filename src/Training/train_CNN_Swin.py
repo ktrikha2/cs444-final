@@ -64,6 +64,44 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
             k: v.float() if isinstance(v, torch.Tensor) else v
             for k, v in outputs.items()
         }
+             # --- ADD THIS DEBUG BLOCK ---
+        if batch_idx % 50 == 1:
+            print(f"\n[DEBUG] Epoch {epoch} Batch {batch_idx} Sanity Check:")
+        
+        # Check 1: Predictions (Should be 0.0 to 1.0)
+            p_box = outputs_fp32["pred_boxes"]
+            print(f"  Pred Boxes: min={p_box.min().item():.4f}, max={p_box.max().item():.4f}, mean={p_box.mean().item():.4f}")
+        
+        # Check 2: Targets (Should ALSO be 0.0 to 1.0)
+        # Note: SetCriterion normalizes them internally, but we need to see what the Dataset is providing
+        # processed_targets has 'boxes' in ABSOLUTE PIXELS from Dataset.py usually
+            t_box = torch.cat([t["boxes"] for t in processed_targets], dim=0)
+        
+            img_h, img_w = processed_targets[0]["img_size"]
+            print(f"  Target Boxes (Raw): min={t_box.min().item():.1f}, max={t_box.max().item():.1f}")
+            print(f"  Image Size: H={img_h.item()}, W={img_w.item()}")
+        
+        # Check 3: Normalized Targets (What the Loss actually sees)
+        # Replicate SetCriterion normalization logic briefly to check
+            norm_targets = []
+            for t in processed_targets:
+                h, w = t["img_size"]
+                # Convert xywh -> cxcywh
+                bx = t["boxes"]
+                cx = bx[:, 0] + 0.5 * bx[:, 2]
+                cy = bx[:, 1] + 0.5 * bx[:, 3]
+                wh = bx[:, 2]
+                ht = bx[:, 3]
+            # Normalize
+                norm_targets.append(torch.stack([cx/w, cy/h, wh/w, ht/h], dim=1))
+        
+            all_norm = torch.cat(norm_targets, dim=0)
+            print(f"  Target Boxes (Normalized): min={all_norm.min().item():.4f}, max={all_norm.max().item():.4f}")
+
+            if all_norm.max() > 1.1:
+                print("  ❌ CRITICAL ERROR: Targets > 1.0. Model cannot learn.")
+            else:
+                print("  ✅ Targets look correct (0-1 range).")
         t_loss = time.time()
         loss_dict = criterion(outputs_fp32, processed_targets)
         loss = sum(loss_dict[k] * weight_dict.get(k, 1.0) for k in loss_dict)
