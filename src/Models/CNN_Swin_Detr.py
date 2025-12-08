@@ -128,7 +128,7 @@ class MLP(nn.Module):
         layers.append(nn.Linear(hidden_dim, output_dim))
         self.layers = nn.Sequential(*layers)
 
-        # Xavier init exactly as DETR does
+        # DETR uses Xavier init for all linear layers
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)
@@ -139,17 +139,19 @@ class MLP(nn.Module):
 
 
 class PredictionHead(nn.Module):
-    def __init__(self, d_model=256, num_classes=80):
+    def __init__(self, d_model=256, hidden_dim=256, num_classes=80):
+
         super().__init__()
-        # DETR uses 3-layer MLP with same hidden dim as model dim
-        self.bbox_mlp = MLP(d_model, d_model, 4, num_layers=3)
+
+        # DETR bbox MLP (3 layers): d_model → hidden_dim → hidden_dim → 4
+        self.bbox_mlp = MLP(d_model, hidden_dim, 4, num_layers=3)
 
         # Classification head
         self.class_embed = nn.Linear(d_model, num_classes + 1)
 
-        # Initialize no-object bias
-        prior = 0.01
-        bias_value = -math.log((1 - prior) / prior)
+        # Initialize no-object bias like DETR
+        prior_prob = 0.01
+        bias_value = -math.log((1 - prior_prob) / prior_prob)
         nn.init.constant_(self.class_embed.bias.data[-1], bias_value)
 
     def forward(self, x):
@@ -159,32 +161,27 @@ class PredictionHead(nn.Module):
 
 
         if self.training and x.shape[1] > 0:
-            # Print only for batch 0 to avoid spam
             with torch.no_grad():
                 print("[HEAD INPUT] first row first 8 dims:",
                       x[0, 0, :8].detach().cpu())
-
-                # std across queries for first 8 dims
                 print("[HEAD INPUT] per-dim std across queries (first 8 dims):",
                       x[0, :, :8].std(dim=0).detach().cpu())
-
-                # full mean/std
                 print("[HEAD INPUT] mean/std over all queries:",
                       x.mean().item(), x.std().item())
 
-    
-        raw_boxes = self.bbox_mlp(x)  # [B, num_queries, 4]
 
+        raw = self.bbox_mlp(x)
 
-        if self.training and raw_boxes.shape[1] > 0:
+        if self.training and raw.shape[1] > 0:
             with torch.no_grad():
-                per_dim_std = raw_boxes[0].std(dim=0)   # [4]
+                per_dim_std = raw[0].std(dim=0)
                 print("[RAW BBOX] per-dim std:", per_dim_std.cpu().tolist())
-                print("[RAW BBOX] first 5 rows:", raw_boxes[0, :5].detach().cpu())
+                print("[RAW BBOX] first 5 rows:", raw[0, :5].detach().cpu())
 
-        boxes = raw_boxes.sigmoid()
+        # Sigmoid → normalized cxcywh [0,1]
+        boxes = raw.sigmoid()
 
-        # Classification logits
+        # classification logits
         classes = self.class_embed(x)
 
         return boxes, classes
