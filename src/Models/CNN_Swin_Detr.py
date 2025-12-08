@@ -201,6 +201,8 @@ class SwinDETR(nn.Module):
 
     def forward(self, x):
         # Backbone
+        print("[BACKBONE] forward called. Feature std:", x.std().item())
+
         features = self.backbone(x)  # [B, C_backbone, h, w]
         #print("Backbone features:", features.mean().item(), features.std().item())
 
