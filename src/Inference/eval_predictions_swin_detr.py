@@ -60,6 +60,9 @@ def main():
 
     ckpt = torch.load(args.ckpt, map_location="cpu")
     model.load_state_dict(ckpt["model_state_dict"])
+    missing, unexpected = model.load_state_dict(ckpt["model_state_dict"], strict=False)
+    print("MISSING KEYS:", missing)
+    print("UNEXPECTED KEYS:", unexpected)   
     model.eval()
 
     num_classes = cfg["model"]["num_classes"]  # e.g. 10
