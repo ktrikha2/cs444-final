@@ -170,10 +170,14 @@ class SwinTransformerBlock(nn.Module):
             nn.Linear(int(dim*mlp_ratio), dim)
         )
         self.window_size = window_size
+        self.dim = dim
+        self.mlp_ratio = mlp_ratio
 
     def forward(self, x, H, W, mask=None):
         B, L, C = x.shape
         H_orig, W_orig = H, W
+        shortcut = x
+        x = self.norm1(x)
         x = x.view(B, H, W, C)
 
         # Partition windows
@@ -181,13 +185,13 @@ class SwinTransformerBlock(nn.Module):
         x_windows = x_windows.view(-1, self.window_size*self.window_size, C)
 
         # Attention
-        attn_windows = self.attn(self.norm1(x_windows), mask=mask)
+        attn_windows = self.attn(x_windows, mask=mask)
 
         # Merge windows
         x = window_reverse(attn_windows, self.window_size, H_pad, W_pad)
         x = x[:, :H_orig, :W_orig, :]  # crop padding
         x = x.reshape(B, H_orig*W_orig, C)
-
+        x = shortcut + x #residual connection 
         # MLP
         x = x + self.mlp(self.norm2(x))
         return x
