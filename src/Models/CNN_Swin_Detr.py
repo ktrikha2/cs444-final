@@ -204,7 +204,7 @@ class SwinDETR(nn.Module):
         print("[BACKBONE] forward called. Feature std:", x.std().item())
 
         features = self.backbone(x)  # [B, C_backbone, h, w]
-        #print("Backbone features:", features.mean().item(), features.std().item())
+        print("[SWIN DETR] backbone output std:", features.std().item())
 
         # Neck
         encoder_output = self.neck(features)  # Will be [B, N, d_model]
