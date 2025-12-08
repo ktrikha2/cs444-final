@@ -159,7 +159,7 @@ class SwinTransformerBlock(nn.Module):
     #     x = x + self.mlp(self.norm2(x))
     #     return x
 
-    def __init__(self, dim, num_heads, window_size=7, mlp_ratio=4.0):
+    def __init__(self, dim, num_heads, window_size=7,shift_size=0, mlp_ratio=4.0):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
         self.attn = WindowAttention(dim, num_heads, window_size)
@@ -172,6 +172,7 @@ class SwinTransformerBlock(nn.Module):
         self.window_size = window_size
         self.dim = dim
         self.mlp_ratio = mlp_ratio
+        self.shift_size = shift_size
 
     def forward(self, x, H, W, mask=None):
         B, L, C = x.shape
@@ -180,15 +181,26 @@ class SwinTransformerBlock(nn.Module):
         x = self.norm1(x)
         x = x.view(B, H, W, C)
 
+        if self.shift_size > 0:
+            shifted_x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1,2))
+            attn_mask = mask
+        else:
+            shifted_x = x
+            attn_mask = None
+
         # Partition windows
-        x_windows, H_pad, W_pad = window_partition(x, self.window_size)
+        x_windows, H_pad, W_pad = window_partition(shifted_x, self.window_size)
         x_windows = x_windows.view(-1, self.window_size*self.window_size, C)
 
         # Attention
-        attn_windows = self.attn(x_windows, mask=mask)
+        attn_windows = self.attn(x_windows, mask=attn_mask)
 
         # Merge windows
-        x = window_reverse(attn_windows, self.window_size, H_pad, W_pad)
+        shifted_x = window_reverse(attn_windows, self.window_size, H_pad, W_pad)
+        if self.shift_size > 0:
+            x = torch.roll(shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
+        else:
+            x = shifted_x
         x = x[:, :H_orig, :W_orig, :]  # crop padding
         x = x.reshape(B, H_orig*W_orig, C)
         x = shortcut + x #residual connection 
@@ -236,8 +248,9 @@ class SwinStage(nn.Module):
         self.blocks = nn.ModuleList()
         for i in range(num_blocks):
             # alternate shift for every other block
+            current_shift = 0 if (i % 2 == 0) else self.shift_size
             self.blocks.append(SwinTransformerBlock(dim=dim, num_heads=num_heads,
-                                                    window_size=window_size))
+                                                    window_size=window_size, shift_size=current_shift))
         self.patch_merge = patch_merge
         if patch_merge:
             assert output_dim is not None
@@ -246,8 +259,13 @@ class SwinStage(nn.Module):
     def forward(self, x: torch.Tensor, H: int, W: int) -> Tuple[torch.Tensor, int, int]:
         # prepare attention mask per block if needed (only for blocks with shift)
         device = x.device
+        pad_h = (self.window_size - H % self.window_size) % self.window_size
+        pad_w = (self.window_size - W % self.window_size) % self.window_size
+        Hp = H + pad_h
+        Wp = W + pad_w
+        attn_mask = compute_attn_mask(Hp, Wp, self.window_size, self.shift_size, device)
         for blk in self.blocks:
-            x = blk(x, H, W)
+            x = blk(x, H, W, mask=attn_mask)
 
         if self.patch_merge:
             x, H, W = self.merge(x, H, W)
