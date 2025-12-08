@@ -138,14 +138,16 @@ class PredictionHead(nn.Module):
         nn.init.constant_(self.class_embed.bias.data[num_classes], bias_value)
 
     def forward(self, x):
-        # x: [B, num_queries, d_model]
-        #print("Head input:", x.mean().item(), x.std().item())
-
-        boxes = self.bbox_mlp(x).sigmoid()   # normalized coordinates
-        #print("Raw bbox mlp:", boxes.mean().item(), boxes.std().item())
-        #print("bbox layer final weight std:", self.bbox_mlp[-1].weight.std().item())
-        #print("bbox layer final bias std:", self.bbox_mlp[-1].bias.std().item())
-        classes = self.class_embed(x)        # logits for softmax later
+        raw = self.bbox_mlp(x)  # BEFORE sigmoid
+        if not self.training:
+            with torch.no_grad():
+                # variance across queries for this image
+                per_dim_std = raw[0].std(dim=0)          # [4]
+                print("raw bbox per-dim std:", per_dim_std.cpu().tolist())
+                # first 5 raw bbox vectors
+                print("raw bbox first 5:", raw[0, :5].detach().cpu())
+        boxes = raw.sigmoid()
+        classes = self.class_embed(x)
         return boxes, classes
 
 class SwinDETR(nn.Module):
