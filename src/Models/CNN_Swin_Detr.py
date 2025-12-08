@@ -34,7 +34,10 @@ class Neck(nn.Module):
         #print("After adding pos:", x.mean().item(), x.std().item())
 
         x = self.encoder(x)               # [B, N, out_dim]
-        #print("Neck encoder out:", x.mean().item(), x.std().item())
+        #print("Neck encoder out:", x.mean().item(), x.std().item())\
+        print("Encoder output mean/std:", x.mean().item(), x.std().item())
+        print("Encoder output spatial diff:",
+            (x[:,1:,:] - x[:,:-1,:]).abs().mean().item())
 
         return x
 
@@ -105,8 +108,8 @@ class DETRDecoder(nn.Module):
             #print("queries (pos query) mean/std:", queries.mean().item(), queries.std().item())
         out = self.decoder(tgt=queries, memory=encoder_output)        # [B, num_queries, d_model]
         #print("Decoder output:", out.mean().item(), out.std().item())
-        print("Decoder output std:", out.std().item())
-        print("Decoder output first-row:", out[0, :5].detach().cpu())
+        #print("Decoder output std:", out.std().item())
+        #print("Decoder output first-row:", out[0, :5].detach().cpu())
 
         return out
 
