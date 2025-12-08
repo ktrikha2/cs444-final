@@ -130,7 +130,7 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
 
 if __name__ == "__main__":
     # Configure paths
-    PRED_FILE = "resultsdebug/swin_detr_10.json" 
+    PRED_FILE = "resultsdebug/swin_detr_5.json" 
     GT_FILE = "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
     OUTPUT_DIR = "evaluation_results_debug_full"
     
