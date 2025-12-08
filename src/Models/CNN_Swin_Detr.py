@@ -98,6 +98,8 @@ class DETRDecoder(nn.Module):
         #print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
         #tgt = self.tgt_embed.weight.unsqueeze(0).repeat(B, 1, 1)
         #tgt = torch.zeros(B, self.num_queries, self.d_model, device=encoder_output.device)
+        print("Query embed std:", self.query_embed.weight.std().item())
+        print("Query embed mean:", self.query_embed.weight.mean().item())
 
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
         #tgt_with_pos = tgt + queries
@@ -214,6 +216,14 @@ class SwinDETR(nn.Module):
                 print("DECODER COLLAPSED (Inputs identical)")
             else:
                 print("DECODER HEALTHY (Inputs diverse)")
+        if not self.training:
+            with torch.no_grad():
+                print("[EVAL] decoder_output mean/std:",
+                      decoder_output.mean().item(),
+                      decoder_output.std().item())
+
+                print("[EVAL] decoder_output first-row first-8 dims:",
+                      decoder_output[0, 0, :8])
         boxes, classes = self.head(decoder_output)
         outputs = {
             "pred_boxes": boxes,       # [B, num_queries, 4]
