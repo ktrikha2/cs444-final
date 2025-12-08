@@ -118,7 +118,8 @@ class PredictionHead(nn.Module):
             nn.Linear(hidden_dim, 4)   # [cx, cy, w, h], normalized
         )
         nn.init.constant_(self.bbox_mlp[-1].bias.data, 0)
-        nn.init.constant_(self.bbox_mlp[-1].weight.data, 0)
+        #nn.init.constant_(self.bbox_mlp[-1].weight.data, 0)
+        nn.init.xavier_uniform_(self.bbox_mlp[-1].weight.data)
         print("INIT CHECK:", 
             self.bbox_mlp[-1].weight.std().item(), 
             self.bbox_mlp[-1].bias.std().item())
