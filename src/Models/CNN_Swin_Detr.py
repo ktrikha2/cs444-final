@@ -101,8 +101,8 @@ class DETRDecoder(nn.Module):
         #print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
         #tgt = self.tgt_embed.weight.unsqueeze(0).repeat(B, 1, 1)
         #tgt = torch.zeros(B, self.num_queries, self.d_model, device=encoder_output.device)
-        print("Query embed std:", self.query_embed.weight.std().item())
-        print("Query embed mean:", self.query_embed.weight.mean().item())
+        #print("Query embed std:", self.query_embed.weight.std().item())
+        #print("Query embed mean:", self.query_embed.weight.mean().item())
 
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
         #tgt_with_pos = tgt + queries
@@ -165,26 +165,26 @@ class PredictionHead(nn.Module):
         """
 
 
-        if self.training and x.shape[1] > 0:
-            with torch.no_grad():
-                print("[HEAD INPUT] first row first 8 dims:",
-                      x[0, 0, :8].detach().cpu())
-                print("[HEAD INPUT] per-dim std across queries (first 8 dims):",
-                      x[0, :, :8].std(dim=0).detach().cpu())
-                print("[HEAD INPUT] mean/std over all queries:",
-                      x.mean().item(), x.std().item())
+        #if self.training and x.shape[1] > 0:
+            #with torch.no_grad():
+                #print("[HEAD INPUT] first row first 8 dims:",
+                      #x[0, 0, :8].detach().cpu())
+                #print("[HEAD INPUT] per-dim std across queries (first 8 dims):",
+                      #x[0, :, :8].std(dim=0).detach().cpu())
+                #print("[HEAD INPUT] mean/std over all queries:",
+                      #x.mean().item(), x.std().item())
 
 
         raw = self.bbox_mlp(x)
-        if not self.training:
-            with torch.no_grad():
-                print("[RAW BBOX] per-dim std:", raw[0].std(dim=0).cpu().tolist())
-                print("[RAW BBOX] first 5:", raw[0, :5].cpu())
-        if self.training and raw.shape[1] > 0:
-            with torch.no_grad():
-                per_dim_std = raw[0].std(dim=0)
-                print("[RAW BBOX] per-dim std:", per_dim_std.cpu().tolist())
-                print("[RAW BBOX] first 5 rows:", raw[0, :5].detach().cpu())
+        #if not self.training:
+            #with torch.no_grad():
+                #print("[RAW BBOX] per-dim std:", raw[0].std(dim=0).cpu().tolist())
+                #print("[RAW BBOX] first 5:", raw[0, :5].cpu())
+        #if self.training and raw.shape[1] > 0:
+            #with torch.no_grad():
+                #per_dim_std = raw[0].std(dim=0)
+                #print("[RAW BBOX] per-dim std:", per_dim_std.cpu().tolist())
+                #print("[RAW BBOX] first 5 rows:", raw[0, :5].detach().cpu())
 
         # Sigmoid → normalized cxcywh [0,1]
         boxes = raw.sigmoid()
@@ -204,35 +204,35 @@ class SwinDETR(nn.Module):
 
     def forward(self, x):
         # Backbone
-        print("[BACKBONE] forward called. Feature std:", x.std().item())
+        #print("[BACKBONE] forward called. Feature std:", x.std().item())
 
         features = self.backbone(x)  # [B, C_backbone, h, w]
-        print("[SWIN DETR] backbone output std:", features.std().item())
+        #print("[SWIN DETR] backbone output std:", features.std().item())
 
         # Neck
         encoder_output = self.neck(features)  # Will be [B, N, d_model]
-        print("\n[DEBUG] MEMORY INPUT SHAPE:", encoder_output.shape)
-        print("[DEBUG] MEMORY FIRST TOKEN FIRST 8 VALUES:", encoder_output[0, 0, :8])
-        print("[DEBUG] MEMORY MEAN/STD:", encoder_output.mean().item(), encoder_output.std().item())
+        #print("\n[DEBUG] MEMORY INPUT SHAPE:", encoder_output.shape)
+        #print("[DEBUG] MEMORY FIRST TOKEN FIRST 8 VALUES:", encoder_output[0, 0, :8])
+        #print("[DEBUG] MEMORY MEAN/STD:", encoder_output.mean().item(), encoder_output.std().item())
 
         # Decoder
         decoder_output = self.decoder(encoder_output)  # [B, num_queries, d_model]
         # Prediction Head
-        if self.training and torch.rand(1).item() < 0.01:
-            std_queries = decoder_output.std(dim=1).mean().item()
-            print(f"\n[DEBUG] Decoder Output Variance (Std across queries): {std_queries:.6f}")
-            if std_queries < 0.001:
-                print("DECODER COLLAPSED (Inputs identical)")
-            else:
-                print("DECODER HEALTHY (Inputs diverse)")
-        if not self.training:
-            with torch.no_grad():
-                print("[EVAL] decoder_output mean/std:",
-                      decoder_output.mean().item(),
-                      decoder_output.std().item())
+        #if self.training and torch.rand(1).item() < 0.01:
+            #std_queries = decoder_output.std(dim=1).mean().item()
+            #print(f"\n[DEBUG] Decoder Output Variance (Std across queries): {std_queries:.6f}")
+            #if std_queries < 0.001:
+                #print("DECODER COLLAPSED (Inputs identical)")
+            #else:
+                #print("DECODER HEALTHY (Inputs diverse)")
+        #if not self.training:
+            #with torch.no_grad():
+                #print("[EVAL] decoder_output mean/std:",
+                      #decoder_output.mean().item(),
+                      #decoder_output.std().item())
 
-                print("[EVAL] decoder_output first-row first-8 dims:",
-                      decoder_output[0, 0, :8])
+                #print("[EVAL] decoder_output first-row first-8 dims:",
+                      #decoder_output[0, 0, :8])
         boxes, classes = self.head(decoder_output)
         outputs = {
             "pred_boxes": boxes,       # [B, num_queries, 4]

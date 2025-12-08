@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH --job-name=swin_debug
+#SBATCH --job-name=swin_detr
 #SBATCH --account=bfdu-dtai-gh
 #SBATCH --partition=ghx4
-#SBATCH --time=04:00:00
+#SBATCH --time=12:00:00
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=32
 #SBATCH --gpus=1
@@ -14,8 +14,8 @@
 #SBATCH --mail-type=NONE
 
 
-#SBATCH --output=/work/nvme/bfdu/ktrikha/logs/swindetr_debugging/swin-%x-%j.out
-#SBATCH --error=/work/nvme/bfdu/ktrikha/logs/swindetr_debugging/swin-%x-%j.err
+#SBATCH --output=/work/nvme/bfdu/ktrikha/logs/swindetr_full/swin-%x-%j.out
+#SBATCH --error=/work/nvme/bfdu/ktrikha/logs/swindetr_full/swin-%x-%j.err
 
 module load python/3.10.14 cuda/12.4.0 gcc-native/12.3
 source /work/nvme/bfdu/ktrikha/code/cs444-final/swin_env/bin/activate
