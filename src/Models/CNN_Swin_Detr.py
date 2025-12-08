@@ -138,6 +138,13 @@ class PredictionHead(nn.Module):
         nn.init.constant_(self.class_embed.bias.data[num_classes], bias_value)
 
     def forward(self, x):
+        with torch.no_grad():
+            h = x[0]
+            print("[HEAD INPUT] first row first 8 dims:", h[0, :8].cpu())
+            print("[HEAD INPUT] per-dim std across queries (first 8 dims):",
+                h.std(dim=0)[:8].cpu())
+            print("[HEAD INPUT] mean/std over all queries:",
+                h.mean().item(), h.std().item())
         raw = self.bbox_mlp(x)  # BEFORE sigmoid
         if not self.training:
             with torch.no_grad():
