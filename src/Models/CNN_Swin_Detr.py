@@ -82,8 +82,8 @@ class DETRDecoder(nn.Module):
         # Learnable object queries
         self.num_queries = num_queries
         self.query_embed = nn.Embedding(num_queries, d_model)
-
-        self.tgt_embed = nn.Embedding(num_queries, d_model)
+        self.d_model = d_model
+        #self.tgt_embed = nn.Embedding(num_queries, d_model)
         
         # Transformer decoder
         decoder_layer = nn.TransformerDecoderLayer(d_model=d_model, nhead=nhead, dim_feedforward=dim_feedforward, batch_first=True)
@@ -93,17 +93,21 @@ class DETRDecoder(nn.Module):
         # encoder_output: [B, N, d_model]
         B = encoder_output.size(0)
         #print("Decoder input:", encoder_output.mean().item(), encoder_output.std().item())
-        tgt = self.tgt_embed.weight.unsqueeze(0).repeat(B, 1, 1)
+        #tgt = self.tgt_embed.weight.unsqueeze(0).repeat(B, 1, 1)
+        #tgt = torch.zeros(B, self.num_queries, self.d_model, device=encoder_output.device)
 
         queries = self.query_embed.weight.unsqueeze(0).repeat(B, 1, 1)  # [B, num_queries, d_model]
-        tgt_with_pos = tgt + queries
+        #tgt_with_pos = tgt + queries
         #with torch.no_grad():
             #print("query_embed std:", self.query_embed.weight.std(dim=0).mean().item())
             #print("tgt_embed std:", self.tgt_embed.weight.std(dim=0).mean().item())
             #print("tgt (content query) mean/std:", tgt.mean().item(), tgt.std().item())
             #print("queries (pos query) mean/std:", queries.mean().item(), queries.std().item())
-        out = self.decoder(tgt=tgt_with_pos, memory=encoder_output)          # [B, num_queries, d_model]
+        out = self.decoder(tgt=queries, memory=encoder_output)        # [B, num_queries, d_model]
         #print("Decoder output:", out.mean().item(), out.std().item())
+        print("Decoder output std:", out.std().item())
+        print("Decoder output first-row:", out[0, :5].detach().cpu())
+
         return out
 
 class PredictionHead(nn.Module):
