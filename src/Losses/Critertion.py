@@ -135,9 +135,9 @@ class SetCriterion(nn.Module):
         losses = {}
         losses.update(self.loss_labels(outputs, targets_norm, indices, num_boxes))
         losses.update(self.loss_boxes(outputs, targets_norm, indices, num_boxes))
-        print("targets[0] boxes:", targets_norm[0]["boxes"][:5])
-        print("targets[0] labels:", targets_norm[0]["labels"][:5])
-        print("are target boxes normalized?", targets_norm[0]["boxes"].max())
-        print("matcher indices:", indices)
+        #print("targets[0] boxes:", targets_norm[0]["boxes"][:5])
+        #print("targets[0] labels:", targets_norm[0]["labels"][:5])
+        #print("are target boxes normalized?", targets_norm[0]["boxes"].max())
+        #print("matcher indices:", indices)
 
         return losses
