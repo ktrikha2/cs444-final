@@ -246,6 +246,8 @@ class SwinStage(nn.Module):
     def __init__(self, dim, num_blocks, num_heads, window_size, patch_merge = False, output_dim = None):
         super().__init__()
         self.blocks = nn.ModuleList()
+        self.window_size = window_size
+        self.shift_size = window_size // 2
         for i in range(num_blocks):
             # alternate shift for every other block
             current_shift = 0 if (i % 2 == 0) else self.shift_size
@@ -255,8 +257,7 @@ class SwinStage(nn.Module):
         if patch_merge:
             assert output_dim is not None
             self.merge = PatchMerging(dim, output_dim)
-        self.window_size = window_size
-        self.shift_size = window_size // 2
+
 
     def forward(self, x: torch.Tensor, H: int, W: int) -> Tuple[torch.Tensor, int, int]:
         # prepare attention mask per block if needed (only for blocks with shift)
