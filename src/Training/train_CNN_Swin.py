@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 import time
 from torch.cuda.amp import autocast, GradScaler
+from torch.optim.lr_scheduler import LinearLR, SequentialLR, MultiStepLR
 
 # Adjust this path to your project root
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -79,6 +80,8 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
 
         # Optimizer step
         t_opt = time.time()
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
         scaler.step(optimizer)
         scaler.update()
         #optimizer.step()
@@ -145,8 +148,8 @@ def main():
     # -----------------------------
     # Loss / Matcher
     # -----------------------------
-    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
-    weight_dict = {"loss_ce": 1.0, "loss_bbox": 5.0, "loss_giou": 2.0}
+    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=2.0, cost_giou=4.0)
+    weight_dict = {"loss_ce": 1.0, "loss_bbox": 2.0, "loss_giou": 4.0}
     criterion = SetCriterion(
         num_classes=num_classes,
         matcher=matcher,
@@ -157,32 +160,43 @@ def main():
     # -----------------------------
     # Optimizer
     # -----------------------------
-    def is_backbone_param(name):
-        return "backbone" in os.name or "downsample_cnn" in name
+    def is_backbone(n): return "backbone" in n
+    def is_head(n): return "head" in n or "bbox_embed" in n or "class_embed" in n
+
     param_dicts = [
-        {
-        # Transformer/Head LR (only includes names WITHOUT 'backbone' or 'downsample_cnn')
-            "params": [p for n, p in model.named_parameters() if not is_backbone_param(n) and p.requires_grad],
-            "lr": cfg["training"]["lr"], 
-            "weight_decay": cfg["training"]["weight_decay"], 
+        {   # BACKBONE (Keep very low)
+            "params": [p for n, p in model.named_parameters() if is_backbone(n) and p.requires_grad],
+            "lr": 1e-5, 
+            "weight_decay": 1e-4, 
         },
-        {
-        # Backbone LR (only includes names WITH 'backbone' or 'downsample_cnn')
-            "params": [p for n, p in model.named_parameters() if is_backbone_param(n) and p.requires_grad],
-            "lr": cfg["training"]["lr"] * 0.1, # 1/10th rate
-            "weight_decay": cfg["training"]["weight_decay"], 
+        {   # HEADS (Lower this to prevent exploding gradients/box collapse)
+            "params": [p for n, p in model.named_parameters() if is_head(n) and p.requires_grad],
+            "lr": 1e-5, # Your suggestion
+            "weight_decay": 1e-4, 
+        },
+        {   # TRANSFORMER / NECK (The rest)
+            "params": [p for n, p in model.named_parameters() 
+                       if not is_backbone(n) and not is_head(n) and p.requires_grad],
+            "lr": 5e-5, # Your suggestion
+            "weight_decay": 1e-4, 
         },
     ]
-    optimizer = torch.optim.AdamW(
-        param_dicts, weight_decay=cfg["training"]["weight_decay"]
-    )
+    optimizer = torch.optim.AdamW(param_dicts)
     scaler = GradScaler() #trying to add this for speed up 
 
     num_epochs = cfg["training"]["epochs"]
     os.makedirs(cfg["training"]["checkpoint_dir"], exist_ok=True)
-
+    warmup_epochs = 5
+    main_scheduler = MultiStepLR(optimizer, milestones=[30, 45], gamma=0.1)
+    
+    # Linear warmup from start_factor=0.001 to 1.0 over 'warmup_epochs'
+    warmup_scheduler = LinearLR(optimizer, start_factor=0.001, total_iters=warmup_epochs)
+    
+    # Combine them
+    lr_scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, main_scheduler], milestones=[warmup_epochs])
     for epoch in range(1, num_epochs + 1):
         loss = train_epoch(model, criterion, train_loader, optimizer, device, weight_dict, epoch, scaler)
+        lr_scheduler.step()
         print(f"Epoch {epoch}/{num_epochs} Completed | Avg Loss: {loss:.4f}")
 
         if epoch % cfg["training"]["checkpoint_freq"] == 0:

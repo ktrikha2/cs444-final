@@ -14,8 +14,8 @@
 #SBATCH --mail-type=NONE
 
 
-#SBATCH --output=/work/nvme/bfdu/ktrikha/logs/swindetr_full/swin-%x-%j.out
-#SBATCH --error=/work/nvme/bfdu/ktrikha/logs/swindetr_full/swin-%x-%j.err
+#SBATCH --output=/work/nvme/bfdu/ktrikha/logs/swindetr_full_debug/swin-%x-%j.out
+#SBATCH --error=/work/nvme/bfdu/ktrikha/logs/swindetr_full_debug/swin-%x-%j.err
 
 module load python/3.10.14 cuda/12.4.0 gcc-native/12.3
 source /work/nvme/bfdu/ktrikha/code/cs444-final/swin_env/bin/activate
