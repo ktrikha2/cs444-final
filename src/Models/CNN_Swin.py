@@ -56,7 +56,7 @@ def compute_attn_mask(H: int, W: int, window_size: int, shift_size: int, device:
             cnt += 1
 
     # partition windows
-    mask_windows = window_partition(img_mask, window_size)  # (num_windows, ws, ws, 1)
+    mask_windows, _, _ = window_partition(img_mask, window_size)  # (num_windows, ws, ws, 1)
     mask_windows = mask_windows.view(-1, window_size * window_size)
     attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
     attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
@@ -255,6 +255,8 @@ class SwinStage(nn.Module):
         if patch_merge:
             assert output_dim is not None
             self.merge = PatchMerging(dim, output_dim)
+        self.window_size = window_size
+        self.shift_size = window_size // 2
 
     def forward(self, x: torch.Tensor, H: int, W: int) -> Tuple[torch.Tensor, int, int]:
         # prepare attention mask per block if needed (only for blocks with shift)
@@ -265,7 +267,8 @@ class SwinStage(nn.Module):
         Wp = W + pad_w
         attn_mask = compute_attn_mask(Hp, Wp, self.window_size, self.shift_size, device)
         for blk in self.blocks:
-            x = blk(x, H, W, mask=attn_mask)
+            current_mask = attn_mask if blk.shift_size > 0 else None
+            x = blk(x, H, W, mask=current_mask)
 
         if self.patch_merge:
             x, H, W = self.merge(x, H, W)
