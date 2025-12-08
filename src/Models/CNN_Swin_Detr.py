@@ -113,48 +113,80 @@ class DETRDecoder(nn.Module):
 
         return out
 
-class PredictionHead(nn.Module):
-    def __init__(self, d_model=256, hidden_dim=256, num_classes=80):
-        super().__init__()
-        # MLP for bounding box regression
-        self.bbox_mlp = nn.Sequential(
-            nn.Linear(d_model, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 4)   # [cx, cy, w, h], normalized
-        )
-        nn.init.constant_(self.bbox_mlp[-1].bias.data, 0)
-        #nn.init.constant_(self.bbox_mlp[-1].weight.data, 0)
-        nn.init.xavier_uniform_(self.bbox_mlp[-1].weight.data)
-        print("INIT CHECK:", 
-            self.bbox_mlp[-1].weight.std().item(), 
-            self.bbox_mlp[-1].bias.std().item())
 
-        # Linear layer for class prediction
-        self.class_embed = nn.Linear(d_model, num_classes + 1)  # +1 for "no object" class
-        prior_prob = 0.01
-        bias_value = -math.log((1 - prior_prob) / prior_prob)
-        nn.init.constant_(self.class_embed.bias.data[num_classes], bias_value)
+
+
+class MLP(nn.Module):
+    """DETR-style 3-layer MLP for bbox regression."""
+    def __init__(self, input_dim, hidden_dim, output_dim, num_layers):
+        super().__init__()
+        layers = []
+        for i in range(num_layers - 1):
+            in_dim = input_dim if i == 0 else hidden_dim
+            layers.append(nn.Linear(in_dim, hidden_dim))
+            layers.append(nn.ReLU())
+        layers.append(nn.Linear(hidden_dim, output_dim))
+        self.layers = nn.Sequential(*layers)
+
+        # Xavier init exactly as DETR does
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        with torch.no_grad():
-            h = x[0]
-            print("[HEAD INPUT] first row first 8 dims:", h[0, :8].cpu())
-            print("[HEAD INPUT] per-dim std across queries (first 8 dims):",
-                h.std(dim=0)[:8].cpu())
-            print("[HEAD INPUT] mean/std over all queries:",
-                h.mean().item(), h.std().item())
-        raw = self.bbox_mlp(x)  # BEFORE sigmoid
-        if not self.training:
+        return self.layers(x)
+
+
+class PredictionHead(nn.Module):
+    def __init__(self, d_model=256, num_classes=80):
+        super().__init__()
+        # DETR uses 3-layer MLP with same hidden dim as model dim
+        self.bbox_mlp = MLP(d_model, d_model, 4, num_layers=3)
+
+        # Classification head
+        self.class_embed = nn.Linear(d_model, num_classes + 1)
+
+        # Initialize no-object bias
+        prior = 0.01
+        bias_value = -math.log((1 - prior) / prior)
+        nn.init.constant_(self.class_embed.bias.data[-1], bias_value)
+
+    def forward(self, x):
+        """
+        x: [B, num_queries, d_model]
+        """
+
+
+        if self.training and x.shape[1] > 0:
+            # Print only for batch 0 to avoid spam
             with torch.no_grad():
-                # variance across queries for this image
-                per_dim_std = raw[0].std(dim=0)          # [4]
-                print("raw bbox per-dim std:", per_dim_std.cpu().tolist())
-                # first 5 raw bbox vectors
-                print("raw bbox first 5:", raw[0, :5].detach().cpu())
-        boxes = raw.sigmoid()
+                print("[HEAD INPUT] first row first 8 dims:",
+                      x[0, 0, :8].detach().cpu())
+
+                # std across queries for first 8 dims
+                print("[HEAD INPUT] per-dim std across queries (first 8 dims):",
+                      x[0, :, :8].std(dim=0).detach().cpu())
+
+                # full mean/std
+                print("[HEAD INPUT] mean/std over all queries:",
+                      x.mean().item(), x.std().item())
+
+    
+        raw_boxes = self.bbox_mlp(x)  # [B, num_queries, 4]
+
+
+        if self.training and raw_boxes.shape[1] > 0:
+            with torch.no_grad():
+                per_dim_std = raw_boxes[0].std(dim=0)   # [4]
+                print("[RAW BBOX] per-dim std:", per_dim_std.cpu().tolist())
+                print("[RAW BBOX] first 5 rows:", raw_boxes[0, :5].detach().cpu())
+
+        boxes = raw_boxes.sigmoid()
+
+        # Classification logits
         classes = self.class_embed(x)
+
         return boxes, classes
 
 class SwinDETR(nn.Module):
