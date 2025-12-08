@@ -276,7 +276,7 @@ class SwinDETRBackbone(nn.Module):
         B, _, H, W = x.shape
         # Step 1: CNN downsample
         x = self.downsample_cnn(x)  # [B, embed_dim, H/4, W/4]
-
+        print("[BACKBONE] CNN output mean/std:", x.mean().item(), x.std().item())
         # Step 2: Flatten to tokens
         B, C, H, W = x.shape
         x_tokens = x.permute(0, 2, 3, 1).contiguous()  # [B, H*W, C]
@@ -284,20 +284,26 @@ class SwinDETRBackbone(nn.Module):
 
         # Step 3: 4 Swin stages
         x_tokens, H, W = self.stage1(x_tokens, H, W)
-        #print("Stage1:", x_tokens.mean().item(), x_tokens.std().item())
+        print("[BACKBONE] Stage1 output mean/std:", x_tokens.mean().item(), x_tokens.std().item())
+
 
         x_tokens, H, W = self.stage2(x_tokens, H, W)
-        #print("Stage2:", x_tokens.mean().item(), x_tokens.std().item())
+        print("[BACKBONE] Stage2 output mean/std:", x_tokens.mean().item(), x_tokens.std().item())
+
 
         x_tokens, H, W = self.stage3(x_tokens, H, W)
-        #print("Stage3:", x_tokens.mean().item(), x_tokens.std().item())
+        print("[BACKBONE] Stage3 output mean/std:", x_tokens.mean().item(), x_tokens.std().item())
+
 
         x_tokens, H, W = self.stage4(x_tokens, H, W)
-        #print("Stage4:", x_tokens.mean().item(), x_tokens.std().item())
+        print("[BACKBONE] Stage4 output mean/std:", x_tokens.mean().item(), x_tokens.std().item())
+
 
 
         B, N, C_out = x_tokens.shape
         x_feat = x_tokens.view(B,H,W,C_out).permute(0,3,1,2).contiguous()
+        print("[BACKBONE] FINAL x_feat mean/std:", x_feat.mean().item(), x_feat.std().item())
+        print("[BACKBONE] FINAL x_feat first 8:", x_feat[0, :, 0, 0][:8])
         return x_feat    # [B, C_out, H, W]
 
 # --- Example usage ---

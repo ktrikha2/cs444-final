@@ -208,6 +208,10 @@ class SwinDETR(nn.Module):
 
         # Neck
         encoder_output = self.neck(features)  # Will be [B, N, d_model]
+        print("\n[DEBUG] MEMORY INPUT SHAPE:", encoder_output.shape)
+        print("[DEBUG] MEMORY FIRST TOKEN FIRST 8 VALUES:", encoder_output[0, 0, :8])
+        print("[DEBUG] MEMORY MEAN/STD:", encoder_output.mean().item(), encoder_output.std().item())
+
         # Decoder
         decoder_output = self.decoder(encoder_output)  # [B, num_queries, d_model]
         # Prediction Head
