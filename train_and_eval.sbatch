@@ -51,7 +51,7 @@ fi
 #######################
 # Adjust these paths if your model lands somewhere else
 CKPT_PATH="/work/nvme/bfdu/dsingh10/checkpoints/swin_cnn/swin_detr_epoch20.pth"
-OUT_PATH="/work/nvme/bfdu/dsingh10/output/val_preds.json"
+OUT_PATH="/work/nvme/bfdu/dsingh10/output/val_preds1.json"
 
 echo "Starting inference..."
 python src/Training/Eval_swin_detr.py \

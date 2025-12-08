@@ -34,15 +34,25 @@ def window_reverse(windows, window_size, H, W):
     x = x.permute(0,1,3,2,4,5).contiguous().view(B, H, W, -1)
     return x
 
+import torch
+import torch.nn.functional as F
+
 def compute_attn_mask(H: int, W: int, window_size: int, shift_size: int, device: torch.device) -> torch.Tensor:
     """
-    Builds attention mask for shifted windows as in the Swin paper.
+    Builds attention mask for shifted windows as in the Swin Transformer.
+    Pads H and W if necessary so they are divisible by window_size.
     Returns mask with shape (num_windows, window_size*window_size, window_size*window_size)
     """
     if shift_size == 0:
         return None
 
-    img_mask = torch.zeros((1, H, W, 1), device=device)  # 1 H W 1
+    # Compute padding
+    pad_h = (window_size - H % window_size) % window_size
+    pad_w = (window_size - W % window_size) % window_size
+    Hp, Wp = H + pad_h, W + pad_w
+
+    # Initialize mask
+    img_mask = torch.zeros((1, Hp, Wp, 1), device=device)  # 1 H W 1
     cnt = 0
     h_slices = (slice(0, -window_size),
                 slice(-window_size, -shift_size),
@@ -50,18 +60,23 @@ def compute_attn_mask(H: int, W: int, window_size: int, shift_size: int, device:
     w_slices = (slice(0, -window_size),
                 slice(-window_size, -shift_size),
                 slice(-shift_size, None))
+
     for h in h_slices:
         for w in w_slices:
             img_mask[:, h, w, :] = cnt
             cnt += 1
 
-    # partition windows
+    # Partition windows
     mask_windows = window_partition(img_mask, window_size)  # (num_windows, ws, ws, 1)
+    if isinstance(mask_windows, tuple):
+        mask_windows = mask_windows[0]  # extract tensor if tuple
+
     mask_windows = mask_windows.view(-1, window_size * window_size)
     attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
     attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
-    return attn_mask  # shape (num_windows, ws*ws, ws*ws)
 
+    return attn_mask  # shape (num_windows, ws*ws, ws*ws)
+ 
 
 # --- CNN Downsampling ---
 class DownsampleCNN(nn.Module):
@@ -100,10 +115,18 @@ class WindowAttention(nn.Module):
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         if mask is not None:
-            nW = mask.shape[0]
-            B = B_ // nW
+            nW = mask.shape[0]       # Number of windows
+            B = B_ // nW             # Global batch size
+
+            # 1. Reshape attn: (B_, num_heads, N, N) -> (B, nW, num_heads, N, N)
             attn = attn.view(B, nW, self.num_heads, N, N)
-            attn = attn + mask.unsqueeze(2)
+            
+            # 2. Add mask using correct broadcasting shape:
+            # mask: (nW, N, N) -> (1, nW, 1, N, N)
+            # This broadcasts over the batch (dim 0) and num_heads (dim 2).
+            attn = attn + mask.unsqueeze(1).unsqueeze(0) 
+
+            # 3. Reshape back: (B, nW, num_heads, N, N) -> (B_, num_heads, N, N)
             attn = attn.view(B_, self.num_heads, N, N)
 
         attn = attn.softmax(dim=-1)
@@ -115,22 +138,6 @@ class WindowAttention(nn.Module):
 
 # --- Swin Transformer Block ---
 class SwinTransformerBlock(nn.Module):
-    # def __init__(self, dim, num_heads, window_size=7, shift_size = 0, mlp_ratio=4.0):
-    #     super().__init__()
-    #     self.norm1 = nn.LayerNorm(dim)
-    #     self.attn = WindowAttention(dim, num_heads, window_size)
-    #     self.norm2 = nn.LayerNorm(dim)
-    #     self.mlp = nn.Sequential(
-    #         nn.Linear(dim, int(dim * mlp_ratio)),
-    #         nn.GELU(),
-    #         nn.Linear(int(dim * mlp_ratio), dim)
-    #     )
-
-    # def forward(self, x):
-    #     x = x + self.attn(self.norm1(x))
-    #     x = x + self.mlp(self.norm2(x))
-    #     return x
-
     def __init__(self, dim, num_heads, window_size=7, mlp_ratio=4.0):
         super().__init__()
         self.norm1 = nn.LayerNorm(dim)
@@ -142,11 +149,16 @@ class SwinTransformerBlock(nn.Module):
             nn.Linear(int(dim*mlp_ratio), dim)
         )
         self.window_size = window_size
+        self.shift_size = 0  # will be set in stage forward
 
     def forward(self, x, H, W, mask=None):
         B, L, C = x.shape
         H_orig, W_orig = H, W
         x = x.view(B, H, W, C)
+
+        # cyclic shift if shift_size > 0
+        if self.shift_size > 0:
+            x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
 
         # Partition windows
         x_windows, H_pad, W_pad = window_partition(x, self.window_size)
@@ -157,13 +169,17 @@ class SwinTransformerBlock(nn.Module):
 
         # Merge windows
         x = window_reverse(attn_windows, self.window_size, H_pad, W_pad)
+
+        # reverse cyclic shift
+        if self.shift_size > 0:
+            x = torch.roll(x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
+
         x = x[:, :H_orig, :W_orig, :]  # crop padding
         x = x.reshape(B, H_orig*W_orig, C)
 
         # MLP
         x = x + self.mlp(self.norm2(x))
         return x
-
 
 # --- Patch Merging ---
 class PatchMerging(nn.Module):
@@ -212,10 +228,12 @@ class SwinStage(nn.Module):
             self.merge = PatchMerging(dim, output_dim)
 
     def forward(self, x: torch.Tensor, H: int, W: int) -> Tuple[torch.Tensor, int, int]:
-        # prepare attention mask per block if needed (only for blocks with shift)
         device = x.device
-        for blk in self.blocks:
-            x = blk(x, H, W)
+        for i, blk in enumerate(self.blocks):
+            shift_size = 0 if i % 2 == 0 else blk.window_size // 2
+            blk.shift_size = shift_size
+            mask = compute_attn_mask(H, W, blk.window_size, shift_size, device=device) if shift_size > 0 else None
+            x = blk(x, H, W, mask=mask)
 
         if self.patch_merge:
             x, H, W = self.merge(x, H, W)
@@ -237,18 +255,25 @@ class SwinDETRBackbone(nn.Module):
     def forward(self, x):
         B, _, H, W = x.shape
         # Step 1: CNN downsample
+        #print(x.shape)
         x = self.downsample_cnn(x)  # [B, embed_dim, H/4, W/4]
+        #print(x.shape)
 
         # Step 2: Flatten to tokens
         B, C, H, W = x.shape
         x_tokens = x.permute(0, 2, 3, 1).contiguous()  # [B, H*W, C]
         x_tokens = x_tokens.view(B, H * W, C)
+        #print(x_tokens.shape)
 
         # Step 3: 4 Swin stages
         x, H, W = self.stage1(x_tokens, H, W)
+        #print(x.shape)
         x, H, W = self.stage2(x, H, W)
+        #print(x.shape)
         x, H, W = self.stage3(x, H, W)
+        #print(x.shape)
         x, H, W = self.stage4(x, H, W)
+        #print(x.shape) desperate attempt to debug the tesnor sizes lol 
 
         return x, H, W
 
@@ -256,5 +281,5 @@ class SwinDETRBackbone(nn.Module):
 x = torch.randn(6, 3, 224, 224)  # batch_size=6
 backbone = SwinDETRBackbone()
 features, H_out, W_out = backbone(x)
-print("Final features shape:", features.shape)  # [B, N_final, C_final]
-print("Final H x W:", H_out, W_out)
+#print("Final features shape:", features.shape)  # [B, N_final, C_final]
+#print("Final H x W:", H_out, W_out)
