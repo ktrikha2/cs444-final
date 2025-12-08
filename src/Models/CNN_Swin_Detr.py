@@ -171,7 +171,10 @@ class PredictionHead(nn.Module):
 
 
         raw = self.bbox_mlp(x)
-
+        if not self.training:
+            with torch.no_grad():
+                print("[RAW BBOX] per-dim std:", raw[0].std(dim=0).cpu().tolist())
+                print("[RAW BBOX] first 5:", raw[0, :5].cpu())
         if self.training and raw.shape[1] > 0:
             with torch.no_grad():
                 per_dim_std = raw[0].std(dim=0)
