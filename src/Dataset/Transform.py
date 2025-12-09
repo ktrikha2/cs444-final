@@ -1,6 +1,7 @@
 import torchvision.transforms.functional as F
 import random
 import torch
+import torchvision.transforms as T
 
 
 # Keep transforms minimal. The dataset above already returns tensors.
@@ -46,6 +47,16 @@ def compose_transforms():
         image, target = random_horizontal_flip(image, target, p=0.5)
         #target["boxes"] = xywh_to_xyxy(target["boxes"])
         target = filter_invalid_boxes(target)
+        image = normalize_image(image)
+        return image, target
+    return transform
+
+def get_val_transforms():
+    def transform(image, target):
+        # NO FLIP
+        # 1. Pad (Crucial for Swin!)
+        #image, target = pad_to_divisible(image, target, divisor=32)
+        # 2. Normalize (Crucial for Eval!)
         image = normalize_image(image)
         return image, target
     return transform
