@@ -5,6 +5,20 @@ import torchvision.transforms as T
 
 
 # Keep transforms minimal. The dataset above already returns tensors.
+def pad_to_divisible(image, target, divisor=32):
+    """Pads image to be divisible by divisor (32 for Swin)"""
+    # image is [3, H, W]
+    _, H, W = image.shape
+    
+    pad_h = (divisor - H % divisor) % divisor
+    pad_w = (divisor - W % divisor) % divisor
+    
+    if pad_h > 0 or pad_w > 0:
+        # Pad argument is (left, top, right, bottom)
+        # We pad right and bottom with 0 (black)
+        image = F.pad(image, (0, 0, pad_w, pad_h), fill=0)
+        
+    return image, target
 
 def random_horizontal_flip(image, target, p=0.5):
     if random.random() < p:
@@ -45,7 +59,8 @@ def filter_invalid_boxes(target):
 def compose_transforms():
     def transform(image, target):
         image, target = random_horizontal_flip(image, target, p=0.5)
-        #target["boxes"] = xywh_to_xyxy(target["boxes"])
+        # 1. Pad BEFORE Normalization
+        image, target = pad_to_divisible(image, target, divisor=32) 
         target = filter_invalid_boxes(target)
         image = normalize_image(image)
         return image, target
@@ -57,6 +72,7 @@ def get_val_transforms():
         # 1. Pad (Crucial for Swin!)
         #image, target = pad_to_divisible(image, target, divisor=32)
         # 2. Normalize (Crucial for Eval!)
+        image,target = pad_to_divisible(image, target, divisor=32)
         image = normalize_image(image)
         return image, target
     return transform

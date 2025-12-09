@@ -187,7 +187,7 @@ def main():
     num_epochs = cfg["training"]["epochs"]
     os.makedirs(cfg["training"]["checkpoint_dir"], exist_ok=True)
     warmup_epochs = 5
-    main_scheduler = MultiStepLR(optimizer, milestones=[30, 45], gamma=0.1)
+    main_scheduler = MultiStepLR(optimizer, milestones=[70, 90], gamma=0.1)
     
     # Linear warmup from start_factor=0.001 to 1.0 over 'warmup_epochs'
     warmup_scheduler = LinearLR(optimizer, start_factor=0.001, total_iters=warmup_epochs)
