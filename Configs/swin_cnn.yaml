@@ -20,7 +20,7 @@ model:
   decoder_queries: 100
 
 training:
-  epochs: 10
+  epochs: 5
   batch_size: 4
   lr: 0.0001
   weight_decay: 0.0001
@@ -28,6 +28,6 @@ training:
   device: "cuda"
   checkpoint_dir: "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_full_debug"
   log_dir:  "/work/nvme/bfdu/ktrikha/logs/swindetr_full_debug"
-  checkpoint_freq: 2
+  checkpoint_freq: 1
 
 seed: 42
