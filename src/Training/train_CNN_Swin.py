@@ -149,12 +149,12 @@ def main():
     # Loss / Matcher
     # -----------------------------
     matcher = HungarianMatcher(cost_class=1.0, cost_bbox=1.0, cost_giou=2.0)
-    weight_dict = {"loss_ce": 3.0, "loss_bbox": 1.0, "loss_giou": 2.0}
+    weight_dict = {"loss_ce": 2.0, "loss_bbox": 1.0, "loss_giou": 2.0}
     criterion = SetCriterion(
         num_classes=num_classes,
         matcher=matcher,
         weight_dict=weight_dict,
-        eos_coef=0.25,
+        eos_coef=0.1,
     ).to(device)
 
     # -----------------------------
@@ -166,7 +166,7 @@ def main():
     param_dicts = [
         {   # BACKBONE (Keep very low)
             "params": [p for n, p in model.named_parameters() if is_backbone(n) and p.requires_grad],
-            "lr": 1e-5, 
+            "lr": 5e-5, 
             "weight_decay": 1e-4, 
         },
         {   # HEADS (Lower this to prevent exploding gradients/box collapse)
