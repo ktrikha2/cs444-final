@@ -64,7 +64,7 @@ def main():
     #print("MISSING KEYS:", missing)
     #print("UNEXPECTED KEYS:", unexpected)   
     model.eval()
-    model.backbone.train() #um?
+    #model.backbone.train() #um?
 
     num_classes = cfg["model"]["num_classes"]  # e.g. 10
     all_predictions = []
