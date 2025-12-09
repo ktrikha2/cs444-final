@@ -25,7 +25,7 @@ def main():
     parser.add_argument("--config", required=True)
     parser.add_argument("--ckpt", required=True)
     parser.add_argument("--out", default="val_predictions_swin_detr.json")
-    parser.add_argument("--score_thresh", type=float, default=0.05)
+    parser.add_argument("--score_thresh", type=float, default=0.50)
     args = parser.parse_args()
 
     # -------------------------
