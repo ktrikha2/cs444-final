@@ -334,7 +334,7 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
 
 if __name__ == "__main__":
     # Configure paths
-    PRED_FILE = "results_LONG/swin_detr_15.json"  # Change to your prediction file
+    PRED_FILE = "results_LONG/swin_detr_100.json"  # Change to your prediction file
     GT_FILE = "/work/nvme/bfdu/ktrikha/code/cs444-final/Data/det_val_10k.json"
     IMG_DIR = "/work/nvme/bfdu/ktrikha/data/Dataset/val"
     OUTPUT_DIR = "viz_test"
