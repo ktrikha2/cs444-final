@@ -91,8 +91,8 @@ def main():
 
                 # softmax over classes (+ no-object)
                 probs = pred_logits[b].softmax(-1)        # [Q, C+1]
-                #scores, labels = probs.max(-1)            # [Q], [Q]
-                scores, labels = probs[..., :-1].max(-1)  # ignore no-object class
+                scores, labels = probs.max(-1)            # [Q], [Q]
+                #scores, labels = probs[..., :-1].max(-1)  # ignore no-object class
 
                 if not printed_debug:
                     print("\n===== RAW MODEL DEBUG =====")
