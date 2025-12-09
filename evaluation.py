@@ -340,7 +340,7 @@ if __name__ == "__main__":
     OUTPUT_DIR = "viz_test"
     
     # IMPORTANT: Limit to just 200 images (your validation subset)
-    MAX_IMAGES = 200
+    MAX_IMAGES = None
     
     # Run evaluation
     results = evaluate_model(PRED_FILE, GT_FILE, IMG_DIR, OUTPUT_DIR, max_images=MAX_IMAGES)
