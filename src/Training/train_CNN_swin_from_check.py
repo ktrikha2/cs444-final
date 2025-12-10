@@ -142,7 +142,7 @@ def main():
     print(model) 
     model.to(device)
     start_epoch = 1
-    ckpt_path = "checkpoints/swindetr_LONG/swin_detr_epoch100.pth"
+    ckpt_path = "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_LONG/swin_detr_epoch100.pth"
     
     if os.path.exists(ckpt_path):
         print(f"\n>>> Loading checkpoint from {ckpt_path}\n")
