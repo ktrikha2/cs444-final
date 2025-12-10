@@ -8,13 +8,12 @@ import time
 from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import LinearLR, SequentialLR, MultiStepLR
 
-# Adjust this path to your project root
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(ROOT)
 
 from src.Dataset.Dataset import BDDDetectionDataset
 from src.Dataset.Transform import compose_transforms
-from src.Models.CNN_Swin_Detr import build_swin_detr # Should return your SwinDETR model
+from src.Models.CNN_Swin_Detr import build_swin_detr 
 from src.Training.Utils import set_seed, save_checkpoint
 from src.Losses.HungarianMatcher import HungarianMatcher
 from src.Losses.Critertion import SetCriterion
@@ -142,19 +141,36 @@ def main():
     model = build_swin_detr(cfg)  # Should return your SwinDETR backbone+neck+decoder+head
     print(model) 
     model.to(device)
-
+    start_epoch = 1
+    ckpt_path = "checkpoints/swindetr_LONG/swin_detr_epoch100.pth"
+    
+    if os.path.exists(ckpt_path):
+        print(f"\n>>> Loading checkpoint from {ckpt_path}\n")
+        ckpt = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(ckpt["model_state_dict"], strict=False)
+        
+        # If the checkpoint has 'epoch', use it. Otherwise assume 100.
+        if "epoch" in ckpt:
+            start_epoch = ckpt["epoch"] + 1
+        else:
+            start_epoch = 101 # Fallback if epoch key missing
+        print(f">>> Resuming from Epoch {start_epoch}")
+    else:
+        print(f"\n>>> No checkpoint found at {ckpt_path}, training from scratch...\n")         
+    
+    
     num_classes = cfg["model"]["num_classes"]
 
     # -----------------------------
     # Loss / Matcher
     # -----------------------------
-    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
-    weight_dict = {"loss_ce": 2.0, "loss_bbox": 1.0, "loss_giou": 2.0}
+    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=3.0)
+    weight_dict = {"loss_ce": 1.0, "loss_bbox": 5.0, "loss_giou": 4.0}
     criterion = SetCriterion(
         num_classes=num_classes,
         matcher=matcher,
         weight_dict=weight_dict,
-        eos_coef=0.1,
+        eos_coef=0.25,
     ).to(device)
 
     # -----------------------------
@@ -166,18 +182,18 @@ def main():
     param_dicts = [
         {   # BACKBONE (Keep very low)
             "params": [p for n, p in model.named_parameters() if is_backbone(n) and p.requires_grad],
-            "lr": 5e-5, 
+            "lr": 1e-6, 
             "weight_decay": 1e-4, 
         },
         {   # HEADS (Lower this to prevent exploding gradients/box collapse)
             "params": [p for n, p in model.named_parameters() if is_head(n) and p.requires_grad],
-            "lr": 1e-5, # Your suggestion
+            "lr": 2e-5,
             "weight_decay": 1e-4, 
         },
         {   # TRANSFORMER / NECK (The rest)
             "params": [p for n, p in model.named_parameters() 
                        if not is_backbone(n) and not is_head(n) and p.requires_grad],
-            "lr": 5e-5, # Your suggestion
+            "lr": 2e-5,
             "weight_decay": 1e-4, 
         },
     ]
@@ -185,16 +201,18 @@ def main():
     scaler = GradScaler() #trying to add this for speed up 
 
     num_epochs = cfg["training"]["epochs"]
+    total_epochs = start_epoch + 20
     os.makedirs(cfg["training"]["checkpoint_dir"], exist_ok=True)
-    warmup_epochs = 5
-    main_scheduler = MultiStepLR(optimizer, milestones=[70, 90], gamma=0.1)
     
-    # Linear warmup from start_factor=0.001 to 1.0 over 'warmup_epochs'
-    warmup_scheduler = LinearLR(optimizer, start_factor=0.001, total_iters=warmup_epochs)
-    
-    # Combine them
+    warmup_epochs = 3
+    warmup_scheduler = LinearLR(optimizer, start_factor=0.01, total_iters=warmup_epochs)
+    main_scheduler = MultiStepLR(optimizer, milestones=[1000], gamma=1.0) 
     lr_scheduler = SequentialLR(optimizer, schedulers=[warmup_scheduler, main_scheduler], milestones=[warmup_epochs])
-    for epoch in range(1, num_epochs + 1):
+
+    # Combine them
+    #lr_scheduler = MultiStepLR(optimizer, milestones=[130, 150], gamma=0.1)
+    print(f"Starting training from epoch {start_epoch} to {total_epochs}...")
+    for epoch in range(start_epoch, total_epochs + 1):
         loss = train_epoch(model, criterion, train_loader, optimizer, device, weight_dict, epoch, scaler)
         lr_scheduler.step()
         print(f"Epoch {epoch}/{num_epochs} Completed | Avg Loss: {loss:.4f}")
