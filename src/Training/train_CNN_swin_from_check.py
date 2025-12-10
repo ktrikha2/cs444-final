@@ -80,7 +80,7 @@ def train_epoch(model, criterion, data_loader, optimizer, device, weight_dict, e
         # Optimizer step
         t_opt = time.time()
         scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.3)
         scaler.step(optimizer)
         scaler.update()
         #optimizer.step()
@@ -142,7 +142,7 @@ def main():
     print(model) 
     model.to(device)
     start_epoch = 1
-    ckpt_path = "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_LONG/swin_detr_epoch100.pth"
+    ckpt_path = "/work/nvme/bfdu/ktrikha/checkpoints/swindetr_LONG_CPT/swin_detr_epoch112.pth"
     
     if os.path.exists(ckpt_path):
         print(f"\n>>> Loading checkpoint from {ckpt_path}\n")
@@ -187,13 +187,13 @@ def main():
         },
         {   # HEADS (Lower this to prevent exploding gradients/box collapse)
             "params": [p for n, p in model.named_parameters() if is_head(n) and p.requires_grad],
-            "lr": 2e-5,
+            "lr": 1e-4,
             "weight_decay": 1e-4, 
         },
         {   # TRANSFORMER / NECK (The rest)
             "params": [p for n, p in model.named_parameters() 
                        if not is_backbone(n) and not is_head(n) and p.requires_grad],
-            "lr": 2e-5,
+            "lr": 1e-4,
             "weight_decay": 1e-4, 
         },
     ]
