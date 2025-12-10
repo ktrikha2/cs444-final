@@ -148,8 +148,8 @@ def main():
     # -----------------------------
     # Loss / Matcher
     # -----------------------------
-    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
-    weight_dict = {"loss_ce": 2.0, "loss_bbox": 1.0, "loss_giou": 2.0}
+    matcher = HungarianMatcher(cost_class=1.0, cost_bbox=2.0, cost_giou=2.0)
+    weight_dict = {"loss_ce": 2.0, "loss_bbox": 2.0, "loss_giou": 2.0}
     criterion = SetCriterion(
         num_classes=num_classes,
         matcher=matcher,
