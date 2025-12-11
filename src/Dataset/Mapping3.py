@@ -15,9 +15,6 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 splits = ["train", "val", "test"]
 
-# ----------------------------------------
-# Helper to build attribute lookup
-# ----------------------------------------
 def build_attr_lookup(label_dir):
     """
     Builds a dict:
@@ -96,7 +93,6 @@ for split in splits:
             "attributes": attributes
         })
 
-        # Read DatasetNinja annotation for bounding boxes
         with open(ann_path, "r") as f:
             data = json.load(f)
 
@@ -123,7 +119,6 @@ for split in splits:
                 "iscrowd": 0
             })
 
-    # Build COCO-style dictionary
     coco = {
         "images": images,
         "annotations": annotations,

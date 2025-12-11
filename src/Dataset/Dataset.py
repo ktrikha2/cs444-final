@@ -7,10 +7,6 @@ import torchvision.transforms as T
 
 
 class BDDDetectionDataset(Dataset):
-    """A minimal dataset that expects COCO-style bounding-box JSONs (x,y,w,h)
-    and an image folder. If your annotations are in BDD format, convert them
-    to COCO-like detection JSONs first.
-    """
 
     def __init__(self, images_dir, ann_file, transforms=None):
         self.images_dir = images_dir

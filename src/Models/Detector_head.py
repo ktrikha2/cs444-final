@@ -10,10 +10,6 @@ def make_model(cfg):
         variant=cfg['model']['swin_variant'],
         pretrained=cfg['model']['pretrained']
     )
-
-    # torchvision FasterRCNN expects a backbone that returns an OrderedDict of
-    # feature maps with an attribute "out_channels". We'll wrap the single-stage
-    # feature map in a small adapter.
     class BackboneWrapper(nn.Module):
         def __init__(self, backbone):
             super().__init__()
@@ -33,7 +29,7 @@ def make_model(cfg):
         aspect_ratios=((0.5, 1.0, 2.0),)
     )
 
-    # box predictor is left default; num_classes is a placeholder here
+    # box predictor is left default - num_classes is a placeholder here
     model = FasterRCNN(
         wrapped,
         num_classes=2,

@@ -63,7 +63,6 @@ def compute_attn_mask(H: int, W: int, window_size: int, shift_size: int, device:
     return attn_mask  # shape (num_windows, ws*ws, ws*ws)
 
 
-# --- CNN Downsampling ---
 class DownsampleCNN(nn.Module):
     def __init__(self, in_channels=3, out_channels=128, kernel_size=4, stride=4):
         super().__init__()
@@ -75,7 +74,6 @@ class DownsampleCNN(nn.Module):
         #x = self.relu(x)
         return x
 
-# --- Window Attention ---
 class WindowAttention(nn.Module):
     def __init__(self, dim, num_heads, window_size, attn_dropout=0.0, proj_dropout=0.0):
         super().__init__()
@@ -89,7 +87,7 @@ class WindowAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_dropout)
 
-        #Define relative position bias table (learnable parameter)
+        # relative position bias table
         table_size = (2 * window_size - 1) * (2 * window_size - 1)
         self.relative_position_bias_table = nn.Parameter(
             torch.zeros(table_size, num_heads)
@@ -141,7 +139,7 @@ class WindowAttention(nn.Module):
         out = self.proj_drop(out)
         return out
 
-# --- Swin Transformer Block ---
+#Swin Transformer Block
 class SwinTransformerBlock(nn.Module):
     def __init__(self, dim, num_heads, window_size=7,shift_size=0, mlp_ratio=4.0):
         super().__init__()
@@ -192,8 +190,6 @@ class SwinTransformerBlock(nn.Module):
         x = x + self.mlp(self.norm2(x))
         return x
 
-
-# --- Patch Merging ---
 class PatchMerging(nn.Module):
     def __init__(self, input_dim, output_dim):
         super().__init__()
@@ -210,7 +206,6 @@ class PatchMerging(nn.Module):
         x_reduced = self.reduction(x_unfold)             # [B, H/2*W/2, output_dim]
         return x_reduced, H // 2, W // 2
 
-# --- Swin Stage ---
 # class SwinStage(nn.Module):
 #     def __init__(self, dim, num_blocks, num_heads, window_size, patch_merge=False, output_dim=None):
 #         super().__init__()
@@ -294,11 +289,8 @@ class SwinDETRBackbone(nn.Module):
         x_tokens, H, W = self.stage3(x_tokens, H, W)
         #print("[BACKBONE] Stage3 output mean/std:", x_tokens.mean().item(), x_tokens.std().item())
 
-
         x_tokens, H, W = self.stage4(x_tokens, H, W)
         #print("[BACKBONE] Stage4 output mean/std:", x_tokens.mean().item(), x_tokens.std().item())
-
-
 
         B, N, C_out = x_tokens.shape
         x_feat = x_tokens.view(B,H,W,C_out).permute(0,3,1,2).contiguous()
@@ -306,7 +298,7 @@ class SwinDETRBackbone(nn.Module):
         #print("[BACKBONE] FINAL x_feat first 8:", x_feat[0, :, 0, 0][:8])
         return x_feat    # [B, C_out, H, W]
 
-# --- Example usage ---
+#Checking runs
 #x = torch.randn(6, 3, 224, 224)  # batch_size=6
 #backbone = SwinDETRBackbone()
 #features, H_out, W_out = backbone(x)

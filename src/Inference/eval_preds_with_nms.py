@@ -33,27 +33,19 @@ def main():
     parser.add_argument("--nms_thresh", type=float, default=0.5)    # New argument for NMS
     args = parser.parse_args()
 
-    # -------------------------
-    # Load config & device
-    # -------------------------
     with open(args.config, "r") as f:
         cfg = yaml.safe_load(f)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # -------------------------
-    # Dataset / DataLoader
-    # -------------------------
     val_ds_f = BDDDetectionDataset(
         cfg["data"]["images"]["val"],
         cfg["data"]["annotations"]["val"],
         transforms=get_val_transforms(),
     )
 
-    # ---- USE ONLY FIRST 7K IMAGES ----
     subset_size = 1000
     val_ds = Subset(val_ds_f, list(range(min(subset_size, len(val_ds_f)))))
-    # --------
 
     loader = DataLoader(
         val_ds,
@@ -63,9 +55,6 @@ def main():
         collate_fn=collate_fn,
     )
 
-    # -------------------------
-    # Build & load model
-    # -------------------------
     model = build_swin_detr(cfg).to(device)
 
     ckpt = torch.load(args.ckpt, map_location="cpu")
@@ -77,9 +66,6 @@ def main():
 
     print(f"Starting inference with Score Thresh={args.score_thresh} and NMS IoU={args.nms_thresh}...")
 
-    # -------------------------
-    # Inference loop
-    # -------------------------
     with torch.no_grad():
         for images, targets in loader:
             images = [img.to(device) for img in images]
@@ -117,9 +103,6 @@ def main():
                 if boxes.numel() == 0:
                     continue
 
-                # -----------------------------------------------------------
-                # NMS PREPARATION
-                # -----------------------------------------------------------
                 img_h, img_w = images[b].shape[-2:]
                 
                 # Convert normalized CXCYWH -> Absolute XYXY for NMS
@@ -130,9 +113,6 @@ def main():
                 y2 = (cy + 0.5 * h_norm) * img_h
                 boxes_xyxy = torch.stack([x1, y1, x2, y2], dim=-1)
 
-                # -----------------------------------------------------------
-                # APPLY NMS PER CLASS
-                # -----------------------------------------------------------
                 final_boxes_xywh = []
                 final_scores = []
                 final_labels = []
@@ -175,9 +155,6 @@ def main():
                 final_scores = torch.cat(final_scores, dim=0)
                 final_labels = torch.cat(final_labels, dim=0)
 
-                # -----------------------------------------------------------
-                # STORE PREDICTIONS
-                # -----------------------------------------------------------
                 for box, score, label in zip(final_boxes_xywh, final_scores, final_labels):
                     # labels in training 0..9 -> category_id 1..10
                     category_id = int(label.item() + 1)

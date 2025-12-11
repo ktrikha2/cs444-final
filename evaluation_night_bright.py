@@ -7,9 +7,6 @@ import matplotlib.patches as patches
 from PIL import Image
 import os
 
-# ============================================
-# LOAD PREDICTIONS AND GROUND TRUTH
-# ============================================
 
 def load_ground_truth(ann_file):
     """Load ground truth from COCO JSON"""
@@ -50,10 +47,6 @@ def load_predictions(pred_file):
     return pred_by_image
 
 
-# ============================================
-# IoU CALCULATION
-# ============================================
-
 def box_iou(box1, box2):
     """
     Calculate IoU between two boxes in [x, y, w, h] format
@@ -76,11 +69,6 @@ def box_iou(box1, box2):
     union = area1 + area2 - intersection
     
     return intersection / (union + 1e-6)
-
-
-# ============================================
-# mAP CALCULATION
-# ============================================
 
 def calculate_ap(predictions, ground_truths, iou_threshold=0.5):
     """
@@ -179,10 +167,6 @@ def calculate_map(pred_by_image, gt_by_image, categories, iou_threshold=0.5):
     return mAP, aps
 
 
-# ============================================
-# VISUALIZATION
-# ============================================
-
 def visualize_predictions(image_path, predictions, ground_truths, categories, save_path=None):
     """
     Visualize predictions and ground truth on an image
@@ -227,10 +211,6 @@ def visualize_predictions(image_path, predictions, ground_truths, categories, sa
     
     plt.show()
 
-
-# ============================================
-# MAIN EVALUATION
-# ============================================
 
 def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results", max_images=None):
     """
@@ -282,7 +262,6 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     print(f"mAP@0.5:  {mAP_50:.4f}")
     print(f"mAP@0.75: {mAP_75:.4f}")
     
-    # Per-category results
     print(f"\n{'='*60}")
     print(f"Per-Category AP@0.5:")
     print(f"{'='*60}")
@@ -302,10 +281,9 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     with open(results_file, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\n✓ Saved detailed results to {results_file}")
-    
-    # Visualize some examples
+
     print(f"\n3. Creating visualizations...")
-    sample_image_ids = list(pred_by_image.keys())[:5]  # First 5 images
+    sample_image_ids = list(pred_by_image.keys())[:5] 
     
     for i, img_id in enumerate(sample_image_ids):
         img_info = images[img_id]
@@ -327,20 +305,13 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     
     return results
 
-
-# ============================================
-# RUN EVALUATION
-# ============================================
-
 if __name__ == "__main__":
-    # Configure paths
-    PRED_FILE = "/work/nvme/bfdu/dsingh10/output/swin_detr_epoch150_night_bright.json"  # Change to your prediction file
+
+    PRED_FILE = "/work/nvme/bfdu/dsingh10/output/swin_detr_epoch150_night_bright.json"  
     GT_FILE = "/work/nvme/bfdu/dsingh10/code/cs444-final-fin/Data_Night/det_val_coco.json"
     IMG_DIR = "/work/nvme/bfdu/dsingh10/data_night_bright/Dataset/val"
     OUTPUT_DIR = "dipali_test_night_bright_1000val"
-    
-    # IMPORTANT: Limit to just 200 images (your validation subset)
+
     MAX_IMAGES = None
     
-    # Run evaluation
     results = evaluate_model(PRED_FILE, GT_FILE, IMG_DIR, OUTPUT_DIR, max_images=MAX_IMAGES)

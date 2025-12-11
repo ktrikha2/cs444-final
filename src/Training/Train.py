@@ -55,10 +55,6 @@ def main():
     device = torch.device(
         cfg['training'].get('device', 'cuda' if torch.cuda.is_available() else 'cpu')
     )
-
-    # ----------------------------------------------------
-    # Load dataset
-    # ----------------------------------------------------
     train_ds = BDDDetectionDataset(
         cfg['data']['images']['train'],
         cfg['data']['annotations']['train'],
@@ -75,10 +71,6 @@ def main():
         persistent_workers=True,
         prefetch_factor=4
     )
-
-    # ----------------------------------------------------
-    # Build model
-    # ----------------------------------------------------
     model = make_model(cfg)
 
     # BDD100K has 10 object classes → +1 background = 11
@@ -96,16 +88,10 @@ def main():
 
     model.to(device)
 
-    # ----------------------------------------------------
-    # Optimizer
-    # ----------------------------------------------------
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=cfg['training']['lr'], weight_decay=1e-4
     )
 
-    # ----------------------------------------------------
-    # Training loop
-    # ----------------------------------------------------
     num_epochs = cfg['training']['epochs']
 
     for epoch in range(num_epochs):

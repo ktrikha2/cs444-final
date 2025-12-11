@@ -117,19 +117,15 @@ def main():
     set_seed(cfg.get("seed", 42))
     device = torch.device(cfg["training"].get("device", "cuda" if torch.cuda.is_available() else "cpu"))
 
-    # -----------------------------
-    # Dataset & DataLoader
-    # -----------------------------
     train_ds_f = BDDDetectionDataset(
         cfg["data"]["images"]["train"],
         cfg["data"]["annotations"]["train"],
         transforms=compose_transforms(),
     )
 
-    # ---- USE ONLY FIRST 7K IMAGES ----
     subset_size = 7000
     train_ds = Subset(train_ds_f, list(range(min(subset_size, len(train_ds_f)))))
-    # ------------------------------------
+
 
     train_loader = DataLoader(
         train_ds,
@@ -142,19 +138,13 @@ def main():
         prefetch_factor=4,
     )
 
-    # -----------------------------
-    # Model
-    # -----------------------------
+
     model = build_swin_detr(cfg)  # Should return your SwinDETR backbone+neck+decoder+head
     print(f"Using {len(train_ds)} samples in training")
     print(model) 
     model.to(device)
 
     num_classes = cfg["model"]["num_classes"]
-
-    # -----------------------------
-    # Loss / Matcher
-    # -----------------------------
     matcher = HungarianMatcher(cost_class=1.0, cost_bbox=2.0, cost_giou=2.0)
     weight_dict = {"loss_ce": 2.0, "loss_bbox": 2.0, "loss_giou": 2.0}
     criterion = SetCriterion(
@@ -164,9 +154,8 @@ def main():
         eos_coef=0.1,
     ).to(device)
 
-    # -----------------------------
+
     # Optimizer
-    # -----------------------------
     def is_backbone(n): return "backbone" in n
     def is_head(n): return "head" in n or "bbox_embed" in n or "class_embed" in n
 

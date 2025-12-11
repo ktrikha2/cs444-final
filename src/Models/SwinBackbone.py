@@ -7,7 +7,6 @@ import torch.nn.functional as F
 
 
 class SwinBackbone(nn.Module):
-    #Thin wrapper around a timm Swin model in features_only mode. Returns only the last stage feature map.
     def __init__(self, cfg):
         super().__init__()
 
@@ -42,10 +41,10 @@ class SwinBackbone(nn.Module):
         if pad_h > 0 or pad_w > 0:
             images = F.pad(images, (0, pad_w, 0, pad_h))
 
-        features = self.swin(images)   # list with 1 element because out_indices=(3,)
+        features = self.swin(images)   
         feat = features[0]
 
-        feat = feat.permute(0, 3, 1, 2).contiguous() #changing from BCHW to BHWC in the tensor
+        feat = feat.permute(0, 3, 1, 2).contiguous()
 
         return feat
 

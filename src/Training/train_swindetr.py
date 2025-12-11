@@ -115,9 +115,6 @@ def main():
         cfg["training"].get("device", "cuda" if torch.cuda.is_available() else "cpu")
     )
 
-    # -----------------------------
-    # Dataset & DataLoader
-    # -----------------------------
     train_ds = BDDDetectionDataset(
         cfg["data"]["images"]["train"],
         cfg["data"]["annotations"]["train"],
@@ -135,17 +132,11 @@ def main():
         prefetch_factor=4,
     )
 
-    # -----------------------------
-    # Model
-    # -----------------------------
+
     model = build_swin_detr(cfg)
     model.to(device)
 
     num_classes = cfg["model"]["num_classes"]  # BDD: 10
-
-    # -----------------------------
-    # Loss / Matcher
-    # -----------------------------
     matcher = HungarianMatcher(cost_class=1.0, cost_bbox=5.0, cost_giou=2.0)
     weight_dict = {"loss_ce": 1.0, "loss_bbox": 5.0, "loss_giou": 2.0}
     criterion = SetCriterion(
@@ -155,9 +146,6 @@ def main():
         eos_coef=0.1,
     ).to(device)
 
-    # -----------------------------
-    # Optimizer
-    # -----------------------------
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=cfg["training"]["lr"], weight_decay=1e-4
     )

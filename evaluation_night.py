@@ -7,10 +7,6 @@ import matplotlib.patches as patches
 from PIL import Image
 import os
 
-# ============================================
-# LOAD PREDICTIONS AND GROUND TRUTH
-# ============================================
-
 def load_ground_truth(ann_file):
     """Load ground truth from COCO JSON"""
     with open(ann_file, 'r') as f:
@@ -50,10 +46,6 @@ def load_predictions(pred_file):
     return pred_by_image
 
 
-# ============================================
-# IoU CALCULATION
-# ============================================
-
 def box_iou(box1, box2):
     """
     Calculate IoU between two boxes in [x, y, w, h] format
@@ -76,11 +68,6 @@ def box_iou(box1, box2):
     union = area1 + area2 - intersection
     
     return intersection / (union + 1e-6)
-
-
-# ============================================
-# mAP CALCULATION
-# ============================================
 
 def calculate_ap(predictions, ground_truths, iou_threshold=0.5):
     """
@@ -124,7 +111,7 @@ def calculate_ap(predictions, ground_truths, iou_threshold=0.5):
     recalls = tp_cumsum / len(ground_truths)
     precisions = tp_cumsum / (tp_cumsum + fp_cumsum + 1e-6)
     
-    # Calculate AP using 11-point interpolation
+
     ap = 0
     for t in np.arange(0, 1.1, 0.1):
         if np.sum(recalls >= t) == 0:
@@ -142,7 +129,6 @@ def calculate_map(pred_by_image, gt_by_image, categories, iou_threshold=0.5):
     """
     from tqdm import tqdm
     
-    # OPTIMIZATION: Only look at images that have predictions
     relevant_image_ids = set(pred_by_image.keys())
     
     aps = {}
@@ -152,8 +138,7 @@ def calculate_map(pred_by_image, gt_by_image, categories, iou_threshold=0.5):
         # Collect all predictions and ground truths for this category
         cat_predictions = []
         cat_ground_truths = []
-        
-        # ONLY iterate through images with predictions (not all GT images!)
+
         for img_id in relevant_image_ids:
             # Get predictions for this image and category
             img_preds = [p for p in pred_by_image.get(img_id, []) 
@@ -164,24 +149,17 @@ def calculate_map(pred_by_image, gt_by_image, categories, iou_threshold=0.5):
             img_gts = [gt for gt in gt_by_image.get(img_id, [])
                       if gt['category_id'] == cat_id]
             cat_ground_truths.extend(img_gts)
-        
-        # Calculate AP for this category
+
         if len(cat_ground_truths) > 0:
             ap = calculate_ap(cat_predictions, cat_ground_truths, iou_threshold)
             aps[cat_id] = ap
-            # Don't print per-category during calculation (slows it down)
-    
-    # Calculate mAP
+
     if len(aps) == 0:
         return 0.0, aps
     
     mAP = np.mean(list(aps.values()))
     return mAP, aps
 
-
-# ============================================
-# VISUALIZATION
-# ============================================
 
 def visualize_predictions(image_path, predictions, ground_truths, categories, save_path=None):
     """
@@ -227,11 +205,6 @@ def visualize_predictions(image_path, predictions, ground_truths, categories, sa
     
     plt.show()
 
-
-# ============================================
-# MAIN EVALUATION
-# ============================================
-
 def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results", max_images=None):
     """
     Complete evaluation pipeline
@@ -245,12 +218,10 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     print("OBJECT DETECTION EVALUATION")
     print("="*60)
     
-    # Load data
     print("\n1. Loading data...")
     gt_by_image, categories, images = load_ground_truth(gt_file)
     pred_by_image = load_predictions(pred_file)
-    
-    # Limit to subset if specified
+
     if max_images is not None:
         all_image_ids = sorted(list(set(gt_by_image.keys()) & set(pred_by_image.keys())))
         subset_image_ids = all_image_ids[:max_images]
@@ -259,8 +230,7 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
         pred_by_image = {k: v for k, v in pred_by_image.items() if k in subset_image_ids}
         
         print(f"   LIMITED TO FIRST {max_images} IMAGES")
-    
-    # Count total predictions
+ 
     total_preds = sum(len(preds) for preds in pred_by_image.values())
     total_gts = sum(len(gts) for gts in gt_by_image.values())
     
@@ -271,7 +241,6 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     print(f"   Avg predictions per image: {total_preds / max(len(pred_by_image), 1):.1f}")
     print(f"   Categories: {len(categories)}")
     
-    # Calculate mAP
     print("\n2. Calculating mAP...")
     mAP_50, aps_50 = calculate_map(pred_by_image, gt_by_image, categories, iou_threshold=0.5)
     mAP_75, aps_75 = calculate_map(pred_by_image, gt_by_image, categories, iou_threshold=0.75)
@@ -282,15 +251,13 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     print(f"mAP@0.5:  {mAP_50:.4f}")
     print(f"mAP@0.75: {mAP_75:.4f}")
     
-    # Per-category results
     print(f"\n{'='*60}")
     print(f"Per-Category AP@0.5:")
     print(f"{'='*60}")
     for cat_id, ap in sorted(aps_50.items(), key=lambda x: x[1], reverse=True):
         cat_name = categories[cat_id]
         print(f"{cat_name:15s}: {ap:.4f}")
-    
-    # Save results to JSON
+
     results = {
         "mAP@0.5": float(mAP_50),
         "mAP@0.75": float(mAP_75),
@@ -303,9 +270,8 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
         json.dump(results, f, indent=2)
     print(f"\n✓ Saved detailed results to {results_file}")
     
-    # Visualize some examples
     print(f"\n3. Creating visualizations...")
-    sample_image_ids = list(pred_by_image.keys())[:5]  # First 5 images
+    sample_image_ids = list(pred_by_image.keys())[:5]  
     
     for i, img_id in enumerate(sample_image_ids):
         img_info = images[img_id]
@@ -327,20 +293,12 @@ def evaluate_model(pred_file, gt_file, img_dir, output_dir="evaluation_results",
     
     return results
 
-
-# ============================================
-# RUN EVALUATION
-# ============================================
-
 if __name__ == "__main__":
-    # Configure paths
-    PRED_FILE = "/work/nvme/bfdu/dsingh10/output/swin_detr_epoch150_night.json"  # Change to your prediction file
+    PRED_FILE = "/work/nvme/bfdu/dsingh10/output/swin_detr_epoch150_night.json" 
     GT_FILE = "/work/nvme/bfdu/dsingh10/code/cs444-final-fin/Data_Night/det_val_coco.json"
     IMG_DIR = "/work/nvme/bfdu/dsingh10/data_night/Dataset/val"
     OUTPUT_DIR = "dipali_test_night_1000val"
-    
-    # IMPORTANT: Limit to just 200 images (your validation subset)
+
     MAX_IMAGES = None
     
-    # Run evaluation
     results = evaluate_model(PRED_FILE, GT_FILE, IMG_DIR, OUTPUT_DIR, max_images=MAX_IMAGES)

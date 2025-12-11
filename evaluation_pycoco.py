@@ -7,10 +7,6 @@ import numpy as np
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
-# ============================================
-# MAIN EVALUATION WRAPPER
-# ============================================
-
 def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
     """
     Fast evaluation using pycocotools C-optimized backend.
@@ -22,13 +18,10 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
     print("OBJECT DETECTION EVALUATION (pycocotools backend)")
     print("="*60)
     
-    # 1. Load Ground Truth
     print(f"1. Loading Ground Truth from: {gt_file}")
-    # Suppress verbose COCO init prints
     with contextlib.redirect_stdout(io.StringIO()):
         coco_gt = COCO(gt_file)
         
-    # 2. Load Predictions
     print(f"   Loading Predictions from: {pred_file}")
     try:
         coco_dt = coco_gt.loadRes(pred_file)
@@ -36,7 +29,7 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
         print(f"Error loading predictions: {e}")
         return None
 
-    # 3. Run Evaluation
+    # EVAL
     print("\n2. Evaluating...")
     # 'bbox' is the task type
     coco_eval = COCOeval(coco_gt, coco_dt, 'bbox')
@@ -45,12 +38,7 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
         coco_eval.evaluate()
         coco_eval.accumulate()
     
-    # This prints the standard COCO report to console
     coco_eval.summarize()
-
-    # ============================================
-    # EXTRACT METRICS
-    # ============================================
     
     # Stats indices: 0=mAP(0.5:0.95), 1=mAP@0.5, 2=mAP@0.75
     stats = coco_eval.stats
@@ -62,10 +50,6 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
     print(f"{'='*60}")
     print(f"mAP@0.5:  {mAP_50:.4f}")
     print(f"mAP@0.75: {mAP_75:.4f}")
-
-    # ============================================
-    # PER-CATEGORY AP
-    # ============================================
     
     cats = coco_gt.loadCats(coco_gt.getCatIds())
     cat_names = {cat['id']: cat['name'] for cat in cats}
@@ -77,13 +61,13 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
 
     if precisions is not None:
         for k_idx, cat_id in enumerate(coco_gt.getCatIds()):
-            # --- AP @ 0.50 (Index 0 in IoU dim) ---
+            #AP @ 0.50 (Index 0 in IoU dim)
             p_50 = precisions[0, :, k_idx, 0, 2]
             valid_p_50 = p_50[p_50 > -1]
             ap_50 = valid_p_50.mean() if len(valid_p_50) > 0 else 0.0
             per_cat_ap_50[cat_names[cat_id]] = ap_50
             
-            # --- AP @ 0.75 (Index 5 in IoU dim) ---
+            #AP @ 0.75 (Index 5 in IoU dim)
             p_75 = precisions[5, :, k_idx, 0, 2]
             valid_p_75 = p_75[p_75 > -1]
             ap_75 = valid_p_75.mean() if len(valid_p_75) > 0 else 0.0
@@ -96,9 +80,6 @@ def evaluate_model_fast(pred_file, gt_file, output_dir="evaluation_results"):
     for name, ap in sorted(per_cat_ap_50.items(), key=lambda x: x[1], reverse=True):
         print(f"{name:15s}: {ap:.4f}")
 
-    # ============================================
-    # SAVE JSON
-    # ============================================
     results = {
         "mAP@0.5": float(mAP_50),
         "mAP@0.75": float(mAP_75),

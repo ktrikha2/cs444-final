@@ -9,7 +9,7 @@ class Neck(nn.Module):
         # 1x1 conv to reduce channels
         self.conv1x1 = nn.Conv2d(in_dim, out_dim, kernel_size=1) #changing from linear to conv 2d
         
-        # Positional encoding
+        # pos encoding
         self.pos_encoding = PositionalEncoding(out_dim)
         
         # Transformer encoder
