@@ -1,0 +1,33 @@
+data:
+  root: "/work/nvme/bfdu/dsingh10/data_night/Dataset"
+  images:
+    train: "/work/nvme/bfdu/dsingh10/data_night/Dataset/train"
+    val:   "/work/nvme/bfdu/dsingh10/data_night/Dataset/val"
+    test:  "/work/nvme/bfdu/dsingh10/data_night/Dataset/test"
+  annotations:
+    train: "/work/nvme/bfdu/dsingh10/code/cs444-final-fin/Data_Night/det_train_coco.json"
+    val:   "/work/nvme/bfdu/dsingh10/code/cs444-final-fin/Data_Night/det_val_coco.json"
+    test:  "/work/nvme/bfdu/dsingh10/code/cs444-final-fin/Data_Night/det_test_coco.json"
+
+
+model:
+  num_classes: 10
+  embed_dim: 128
+  num_heads: [4, 8, 16, 32]
+  num_blocks: [2, 2, 6, 2]
+  window_size: 7
+  neck_dim: 256
+  decoder_queries: 100
+
+training:
+  epochs: 150
+  batch_size: 4
+  lr: 0.0001
+  weight_decay: 0.0001
+  num_workers: 16
+  device: "cuda"
+  checkpoint_dir: "/work/nvme/bfdu/dsingh10/checkpoints/swindetr_final_150ep_night"
+  log_dir:  "/work/nvme/bfdu/dsingh10/logs/swindetr_final_150ep_night"
+  checkpoint_freq: 5
+
+seed: 42

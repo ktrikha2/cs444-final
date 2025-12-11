@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 import time
 from torch.cuda.amp import autocast, GradScaler
 from torch.optim.lr_scheduler import LinearLR, SequentialLR, MultiStepLR
+from torch.utils.data import Subset
 
 # Adjust this path to your project root
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -119,11 +120,16 @@ def main():
     # -----------------------------
     # Dataset & DataLoader
     # -----------------------------
-    train_ds = BDDDetectionDataset(
+    train_ds_f = BDDDetectionDataset(
         cfg["data"]["images"]["train"],
         cfg["data"]["annotations"]["train"],
         transforms=compose_transforms(),
     )
+
+    # ---- USE ONLY FIRST 7K IMAGES ----
+    subset_size = 7000
+    train_ds = Subset(train_ds_f, list(range(min(subset_size, len(train_ds_f)))))
+    # ------------------------------------
 
     train_loader = DataLoader(
         train_ds,
@@ -140,6 +146,7 @@ def main():
     # Model
     # -----------------------------
     model = build_swin_detr(cfg)  # Should return your SwinDETR backbone+neck+decoder+head
+    print(f"Using {len(train_ds)} samples in training")
     print(model) 
     model.to(device)
 

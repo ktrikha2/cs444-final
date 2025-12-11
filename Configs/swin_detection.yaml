@@ -1,13 +1,13 @@
 data:
-  root: "/work/nvme/bfdu/dsingh10/data/Dataset"
+  root: "/work/nvme/bfdu/dsingh10/data_night/Dataset"
   images:
-    train: "/work/nvme/bfdu/dsingh10/data/Dataset/train"
-    val:   "/work/nvme/bfdu/dsingh10/data/Dataset/val"
-    test:  "/work/nvme/bfdu/dsingh10/data/Dataset/test"
+    train: "/work/nvme/bfdu/dsingh10/data_night/Dataset/train"
+    val:   "/work/nvme/bfdu/dsingh10/data_night/Dataset/val"
+    test:  "/work/nvme/bfdu/dsingh10/data_night/Dataset/test"
   annotations:
-    train: "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_train_10k.json"
-    val:   "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_val_10k.json"
-    test:  "/work/nvme/bfdu/dsingh10/code/cs444-final/Data/det_test_10k.json"
+    train: "/work/nvme/bfdu/dsingh10/code/cs444-final/Data_Night/det_train_10k.json"
+    val:   "/work/nvme/bfdu/dsingh10/code/cs444-final/Data_Night/det_val_10k.json"
+    test:  "/work/nvme/bfdu/dsingh10/code/cs444-final/Data_Night/det_test_10k.json"
 
 
 model:
@@ -17,15 +17,15 @@ model:
   rpn_anchor_sizes: [[32, 64, 128, 256, 512]]
 
 training:
-  epochs: 50
-  batch_size: 2
+  epochs: 5
+  batch_size: 4
   lr: 0.0001
   weight_decay: 0.0001
   num_workers: 16
   device: "cuda"
-  checkpoint_dir: "/work/nvme/bfdu/dsingh10/checkpoints/swin_run1"
-  log_dir:  "/work/nvme/bfdu/dsingh10/logs/swin_run1"
-  checkpoint_freq: 10
+  checkpoint_dir: "/work/nvme/bfdu/dsingh10/checkpoints/swin_rcnn"
+  log_dir:  "/work/nvme/bfdu/dsingh10/logs/swin_rcnn"
+  checkpoint_freq: 1
 
 
 seed: 42

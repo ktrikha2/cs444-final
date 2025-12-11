@@ -16,6 +16,8 @@ from src.Models.CNN_Swin_Detr import build_swin_detr
 from src.Training.boxes_helper import box_cxcywh_to_xywh
 from src.Dataset.Transform import get_val_transforms
 
+from torch.utils.data import Subset
+
 
 def collate_fn(batch):
     # (list_of_images, list_of_targets)
@@ -42,11 +44,16 @@ def main():
     # -------------------------
     # Dataset / DataLoader
     # -------------------------
-    val_ds = BDDDetectionDataset(
+    val_ds_f = BDDDetectionDataset(
         cfg["data"]["images"]["val"],
         cfg["data"]["annotations"]["val"],
         transforms=get_val_transforms(),
     )
+
+    # ---- USE ONLY FIRST 7K IMAGES ----
+    subset_size = 1000
+    val_ds = Subset(val_ds_f, list(range(min(subset_size, len(val_ds_f)))))
+    # --------
 
     loader = DataLoader(
         val_ds,
